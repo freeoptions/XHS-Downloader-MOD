@@ -43,12 +43,6 @@ class XHSDownloader(App):
     async def on_mount(self) -> None:
         self.theme = "nord"
         self.install_screen(
-            Setting(
-                self.parameter,
-            ),
-            name="setting",
-        )
-        self.install_screen(
             Index(
                 self.APP,
             ),
@@ -69,7 +63,7 @@ class XHSDownloader(App):
             self.SETTINGS.update(data)
             await self.refresh_screen()
 
-        await self.push_screen("setting", save_settings)
+        await self.push_screen(Setting(self.parameter), save_settings)
 
     async def refresh_screen(self):
         await self.action_back()
@@ -79,7 +73,6 @@ class XHSDownloader(App):
         await self.__aenter__()
         await self.APP.switch_script_server()
         self.uninstall_screen("index")
-        self.uninstall_screen("setting")
         self.uninstall_screen("loading")
         self.uninstall_screen("about")
         self.uninstall_screen("record")
@@ -88,12 +81,6 @@ class XHSDownloader(App):
                 self.APP,
             ),
             name="index",
-        )
-        self.install_screen(
-            Setting(
-                self.parameter,
-            ),
-            name="setting",
         )
         self.install_screen(Loading(), name="loading")
         self.install_screen(About(), name="about")

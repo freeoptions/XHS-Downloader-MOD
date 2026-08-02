@@ -1,4 +1,4 @@
-from pyperclip import paste
+from pyperclip import PyperclipException, copy, paste
 from rich.text import Text
 from textual import on, work
 from textual.app import ComposeResult
@@ -32,6 +32,7 @@ class Index(Screen):
         Binding(key="R", action="record", description=_("下载记录")),
         Binding(key="M", action="monitor", description=_("开启监听")),
         Binding(key="A", action="about", description=_("关于项目")),
+        Binding(key="ctrl+c", action="copy_text", description="复制"),
     ]
 
     def __init__(
@@ -42,6 +43,8 @@ class Index(Screen):
         self.xhs = app
         self.url = None
         self.tip = None
+        self.failed_urls: list[str] = []
+        self.copy_failed = None
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -63,13 +66,16 @@ class Index(Screen):
             HorizontalScroll(
                 Button(_("下载作品文件"), id="deal"),
                 Button(_("读取剪贴板"), id="paste"),
+                Button("复制日志", id="copy_log"),
                 Button(_("清空输入框"), id="reset"),
+                Button("复制失败链接", id="copy_failed"),
             ),
         )
         yield RichLog(
             markup=True,
             wrap=True,
             auto_scroll=True,
+            id="main_log",
         )
         yield Footer()
 
@@ -77,6 +83,8 @@ class Index(Screen):
         self.title = PROJECT
         self.url = self.query_one(Input)
         self.tip = self.query_one(RichLog)
+        self.copy_failed = self.query_one("#copy_failed", Button)
+        self.copy_failed.display = False
         self.xhs.print.func = self.tip
         self.tip.write(
             Text(_("免责声明\n") + f"\n{'>' * 50}", style=MASTER),
@@ -106,16 +114,52 @@ class Index(Screen):
     def paste_button(self):
         self.query_one(Input).value = paste()
 
+    def _copy_to_clipboard(self, text: str, success_message: str) -> None:
+        if not text:
+            self.app.notify("暂无可复制内容", severity="warning")
+            return
+        try:
+            copy(text)
+        except PyperclipException:
+            self.app.notify("复制失败，请检查系统剪贴板", severity="error")
+        else:
+            self.app.notify(success_message)
+
+    def _get_log_text(self) -> str:
+        if not self.tip:
+            return ""
+        return "\n".join(line.text.rstrip() for line in self.tip.lines).strip()
+
+    def action_copy_text(self) -> None:
+        selected_text = self.get_selected_text()
+        text = selected_text.strip() if selected_text else self._get_log_text()
+        message = "已复制选中内容" if selected_text else "已复制主界面日志"
+        self._copy_to_clipboard(text, message)
+
+    @on(Button.Pressed, "#copy_log")
+    def copy_log_button(self) -> None:
+        self.action_copy_text()
+
+    @on(Button.Pressed, "#copy_failed")
+    def copy_failed_button(self):
+        if not self.failed_urls:
+            return
+        self._copy_to_clipboard(
+            "\n".join(self.failed_urls),
+            f"已复制 {len(self.failed_urls)} 个失败链接",
+        )
+
     @work(exclusive=True)
     async def deal(self):
         await self.app.push_screen("loading")
-        if any(
-            await self.xhs.extract(
-                self.url.value,
-                True,
-                check_record=True,
-            )
-        ):
+        result = await self.xhs.extract(
+            self.url.value,
+            True,
+            check_record=True,
+        )
+        self.failed_urls = list(dict.fromkeys(self.xhs.last_failed_urls))
+        self.copy_failed.display = bool(self.failed_urls)
+        if any(result):
             self.url.value = ""
         else:
             self.tip.write(

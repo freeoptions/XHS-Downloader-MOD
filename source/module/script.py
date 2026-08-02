@@ -1,9 +1,10 @@
 from asyncio import CancelledError, Queue, create_task
 from contextlib import suppress
 from json import loads
+from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosed
 from typing import TYPE_CHECKING
 
-from websockets import ConnectionClosed, serve
 from websockets.typing import Origin
 
 if TYPE_CHECKING:

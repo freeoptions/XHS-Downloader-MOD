@@ -6,7 +6,6 @@ from sys import argv
 from source import XHS, Settings, XHSDownloader, cli
 from source.GUI import launch
 
-
 async def tui():
     async with XHSDownloader() as xhs:
         await xhs.run_async()

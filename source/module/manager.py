@@ -86,9 +86,9 @@ class Manager:
         self.retry = self.__check_integer(retry, 5, 0)
         self.chunk = self.__check_integer(chunk, 2 * 1024 * 1024, 1024 * 1024)
         self.name_format = self.__check_name_format(name_format)
-        self.record_data = self.check_bool(record_data, False)
+        self.record_data = self.check_bool(record_data, True)
         self.image_format = self.__check_image_format(image_format)
-        self.folder_mode = self.check_bool(folder_mode, False)
+        self.folder_mode = self.check_bool(folder_mode, True)
         self.download_record = self.check_bool(download_record, True)
         self.timeout = self.__check_integer(timeout, 10, 1)
         self.proxy_tip = None
@@ -116,8 +116,8 @@ class Manager:
         self.video_cover_download = self.check_bool(video_cover_download, False)
         self.video_preference = self.check_video_preference(video_preference)
         self.live_download = self.check_bool(live_download, True)
-        self.author_archive = self.check_bool(author_archive, False)
-        self.write_mtime = self.check_bool(write_mtime, False)
+        self.author_archive = self.check_bool(author_archive, True)
+        self.write_mtime = self.check_bool(write_mtime, True)
         self.script_server = self.check_bool(script_server, False)
         self.note_format = self.__check_note_format(note_format)
         self.create_folder()
@@ -130,7 +130,7 @@ class Manager:
         return r if (r := self.__check_root_again(r)) else self.root
 
     def __check_folder(self, folder: str) -> Path:
-        folder = self.cleaner.filter_name(folder, default="Download")
+        folder = self.cleaner.filter_name(folder, default="XHS-Download")
         return self.path.joinpath(folder)
 
     @staticmethod
@@ -151,7 +151,7 @@ class Manager:
             "avif",
         }:
             return i
-        return "jpeg"
+        return "auto"
 
     @staticmethod
     def is_exists(path: Path) -> bool:

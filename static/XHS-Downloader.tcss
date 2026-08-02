@@ -13,10 +13,13 @@ Button {
 .horizontal-layout > * {
     width: 25vw;
 }
-Button#deal, Button#paste, Button#save, Button#enter {
+Button#deal, Button#paste, Button#copy_log, Button#save, Button#enter {
     color: $success;
 }
-Button#reset, Button#abandon, Button#close {
+Button#copy_failed {
+    color: $warning;
+}
+Button#reset, Button#abandon, Button#close, Button#clear_all {
     color: $error;
 }
 Label, Link {

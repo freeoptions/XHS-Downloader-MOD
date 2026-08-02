@@ -53,6 +53,19 @@ class IDRecorder:
         if self.switch:
             [await self.__delete(i) for i in ids]
 
+    async def clear(self) -> int:
+        count = await self.count()
+        await self.database.execute("DELETE FROM explore_id")
+        await self.database.commit()
+        return count
+
+    async def count(self) -> int:
+        async with self.database.execute(
+            "SELECT COUNT(*) FROM explore_id"
+        ) as cursor:
+            row = await cursor.fetchone()
+        return int(row[0]) if row else 0
+
     async def all(self):
         if self.switch:
             await self.cursor.execute("SELECT ID FROM explore_id")

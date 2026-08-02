@@ -1,22 +1,23 @@
 from asyncio import Semaphore, gather
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
+from urllib.parse import urlparse
 
 from aiofiles import open
 from curl_cffi.requests.exceptions import RequestException
 
 from ..expansion import CacheError
 
-# from ..module import WARNING
 from ..module import (
     ERROR,
     FILE_SIGNATURES,
     FILE_SIGNATURES_LENGTH,
     MAX_WORKERS,
+    WARNING,
     logging,
     # sleep_time,
 )
-from ..module import retry as re_download
 from ..translation import _
 
 if TYPE_CHECKING:
@@ -27,9 +28,27 @@ if TYPE_CHECKING:
 __all__ = ["Download"]
 
 
+@dataclass(frozen=True)
+class _DownloadOutcome:
+    success: bool
+    png_conversion_failed: bool = False
+
+    def __bool__(self) -> bool:
+        return self.success
+
+
 class Download:
     SEMAPHORE = Semaphore(MAX_WORKERS)
     WRITE_BUFFER_SIZE = 1024 * 1024 * 100
+    PNG_CONVERSION_FALLBACK_STATUSES = frozenset(
+        {
+            400,
+            404,
+            415,
+            422,
+            *range(500, 600),
+        }
+    )
     CONTENT_TYPE_MAP = {
         "image/png": "png",
         "image/jpeg": "jpeg",
@@ -108,7 +127,7 @@ class Download:
         else:
             raise ValueError
         tasks = [
-            self.__download(
+            self.__download_with_fallback(
                 url,
                 path,
                 name,
@@ -222,8 +241,77 @@ class Download:
             return True
         return False
 
-    @re_download
-    async def __download(
+    async def __download_with_fallback(
+        self,
+        url: str,
+        path: Path,
+        name: str,
+        format_: str,
+        mtime: int,
+        progress: Callable[[dict], None] | None = None,
+        task_id: str | None = None,
+    ) -> bool:
+        result = await self.__download_with_retry(
+            url,
+            path,
+            name,
+            format_,
+            mtime,
+            progress,
+            task_id,
+        )
+        if result:
+            return True
+        if not result.png_conversion_failed:
+            return False
+        if not (auto_url := self.__generate_auto_url(url)):
+            return False
+
+        self.manager.delete(self.temp.joinpath(f"{name}.{format_}"))
+        logging(
+            self.print,
+            f"{name} 的 PNG 转换地址下载失败，仅该文件改用 AUTO 重试",
+            WARNING,
+        )
+        return bool(
+            await self.__download_with_retry(
+                auto_url,
+                path,
+                name,
+                "auto",
+                mtime,
+                progress,
+                task_id,
+            )
+        )
+
+    async def __download_with_retry(
+        self,
+        url: str,
+        path: Path,
+        name: str,
+        format_: str,
+        mtime: int,
+        progress: Callable[[dict], None] | None = None,
+        task_id: str | None = None,
+    ) -> _DownloadOutcome:
+        png_conversion_failed = False
+        for _ in range(self.retry + 1):
+            result = await self.__download_once(
+                url,
+                path,
+                name,
+                format_,
+                mtime,
+                progress,
+                task_id,
+            )
+            png_conversion_failed |= result.png_conversion_failed
+            if result:
+                return _DownloadOutcome(True, png_conversion_failed)
+        return _DownloadOutcome(False, png_conversion_failed)
+
+    async def __download_once(
         self,
         url: str,
         path: Path,
@@ -300,7 +388,7 @@ class Download:
                 )
                 report("completed", total)
                 logging(self.print, _("文件 {0} 下载成功").format(real.name))
-                return True
+                return _DownloadOutcome(True)
             except RequestException as error:
                 report("failed")
                 logging(
@@ -310,7 +398,10 @@ class Download:
                     ),
                     ERROR,
                 )
-                return False
+                return _DownloadOutcome(
+                    False,
+                    self.__is_png_conversion_failure(url, format_, error),
+                )
             except CacheError as error:
                 report("failed")
                 self.manager.delete(temp)
@@ -319,7 +410,34 @@ class Download:
                     str(error),
                     ERROR,
                 )
-                return False
+                return _DownloadOutcome(False)
+
+    @classmethod
+    def __is_png_conversion_failure(
+        cls,
+        url: str,
+        format_: str,
+        error: Exception,
+    ) -> bool:
+        if format_.lower() != "png":
+            return False
+        link = urlparse(url)
+        status_code = getattr(getattr(error, "response", None), "status_code", None)
+        return (
+            link.hostname == "ci.xiaohongshu.com"
+            and "imageview2/format/png" in link.query.lower()
+            and status_code in cls.PNG_CONVERSION_FALLBACK_STATUSES
+        )
+
+    @staticmethod
+    def __generate_auto_url(url: str) -> str:
+        link = urlparse(url)
+        if (
+            link.hostname != "ci.xiaohongshu.com"
+            or "imageview2/format/png" not in link.query.lower()
+        ):
+            return ""
+        return f"https://sns-img-bd.xhscdn.com/{link.path.lstrip('/')}"
 
     @staticmethod
     def __create_progress(

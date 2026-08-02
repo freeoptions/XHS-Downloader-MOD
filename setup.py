@@ -32,7 +32,7 @@ executables = [
     Executable(
         script="main.py",
         icon="./static/XHS-Downloader",
-        target_name="XHS-Downloader",
+        target_name="XHS-Downloader-MOD",
     )
 ]
 

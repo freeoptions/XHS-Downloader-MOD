@@ -15,6 +15,7 @@ from .static import (
     VERSION_BETA,
     ROOT,
     VOLUME,
+    RESOURCE_ROOT,
     REPOSITORY,
     LICENCE,
     RELEASES,

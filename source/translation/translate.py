@@ -4,10 +4,11 @@ from locale import Error, LC_ALL, getlocale, setlocale
 from pathlib import Path
 import sys
 
+_COMPILED = globals().get("__compiled__")
 ROOT = (
-    Path(sys.executable).resolve().parent
-    if getattr(sys, "frozen", False)
-    else Path(__file__).resolve().parent.parent.parent
+    Path(__file__).resolve().parent.parent.parent
+    if _COMPILED or not getattr(sys, "frozen", False)
+    else Path(sys.executable).resolve().parent
 )
 
 

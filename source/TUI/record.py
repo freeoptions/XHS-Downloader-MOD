@@ -32,6 +32,7 @@ class Record(ModalScreen):
                     _("删除指定作品 ID"),
                     id="enter",
                 ),
+                Button("清空全部下载记录", id="clear_all"),
                 Button(_("返回首页"), id="close"),
             ),
             id="record",
@@ -50,6 +51,33 @@ class Record(ModalScreen):
         text = self.query_one(Input)
         await self.delete(text.value)
         text.value = ""
+
+    @on(Button.Pressed, "#clear_all")
+    async def clear_all(self):
+        count = await self.xhs.id_recorder.clear()
+        remaining = await self.xhs.id_recorder.count()
+        if remaining:
+            self.app.notify(
+                f"清空后仍有 {remaining} 条记录，可能有其他运行中的程序正在写入。"
+                "请关闭其他 XHS-Downloader-MOD 窗口后重试。",
+                title="清空未完成",
+                severity="error",
+                timeout=10,
+            )
+        elif count:
+            self.app.notify(
+                f"已清空全部下载记录，共 {count} 条。这里只清除记录，不删除已下载"
+                "文件；再次下载时，同名文件仍会提示“文件已存在，跳过下载”。",
+                title="清空完成",
+                timeout=10,
+            )
+        else:
+            self.app.notify(
+                "下载记录原本就是空的。若仍提示“文件已存在”，说明命中的是硬盘上"
+                "的同名文件，不是下载记录。",
+                title="没有下载记录",
+                timeout=8,
+            )
 
     @on(Button.Pressed, "#close")
     def reset(self):
