@@ -11,6 +11,11 @@ __all__ = ["Setting"]
 
 
 class Setting(Screen):
+    IMAGE_FORMATS = ("AUTO", "PNG", "WEBP", "JPEG", "HEIC")
+    LANGUAGES = ("zh_CN", "en_US")
+    VIDEO_PREFERENCES = ("resolution", "bitrate", "size")
+    NOTE_FORMATS = ("", "txt", "md", "all")
+
     BINDINGS = [
         Binding(key="Q", action="quit", description=_("退出程序")),
         Binding(key="B", action="index", description=_("返回首页")),
@@ -21,7 +26,68 @@ class Setting(Screen):
         data: dict,
     ):
         super().__init__()
-        self.data = data
+        self.data = self.__normalize_data(data)
+
+    @classmethod
+    def __normalize_data(cls, data: dict) -> dict:
+        """把旧版或手动编辑的配置转换成控件可接受的值。"""
+        normalized = data.copy()
+        text_defaults = {
+            "work_path": r"E:\@imFile-Download",
+            "folder_name": "XHS-Download",
+            "name_format": "发布时间 作者昵称 作品标题",
+            "user_agent": "",
+            "cookie": "",
+            "proxy": "",
+        }
+        for key, default in text_defaults.items():
+            value = normalized.get(key, default)
+            normalized[key] = default if value is None else str(value)
+
+        integer_defaults = {"timeout": 10, "chunk": 2097152, "max_retry": 5}
+        for key, default in integer_defaults.items():
+            value = normalized.get(key, default)
+            normalized[key] = value if isinstance(value, int) else default
+
+        boolean_defaults = {
+            "record_data": True,
+            "folder_mode": True,
+            "video_download": True,
+            "image_download": True,
+            "live_download": True,
+            "download_record": True,
+            "author_archive": True,
+            "write_mtime": True,
+            "script_server": False,
+        }
+        for key, default in boolean_defaults.items():
+            value = normalized.get(key, default)
+            normalized[key] = value if isinstance(value, bool) else default
+
+        image_format = str(normalized.get("image_format", "PNG")).upper()
+        normalized["image_format"] = (
+            image_format if image_format in cls.IMAGE_FORMATS else "PNG"
+        )
+        normalized["language"] = cls.__valid_choice(
+            normalized.get("language"), cls.LANGUAGES, "zh_CN"
+        )
+        normalized["video_preference"] = cls.__valid_choice(
+            normalized.get("video_preference"),
+            cls.VIDEO_PREFERENCES,
+            "resolution",
+        )
+        normalized["note_format"] = cls.__valid_choice(
+            normalized.get("note_format"), cls.NOTE_FORMATS, ""
+        )
+        mapping_data = normalized.get("mapping_data", {})
+        normalized["mapping_data"] = (
+            mapping_data if isinstance(mapping_data, dict) else {}
+        )
+        return normalized
+
+    @staticmethod
+    def __valid_choice(value, choices: tuple[str, ...], default: str) -> str:
+        return value if value in choices else default
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -193,19 +259,19 @@ class Setting(Screen):
             Label(),
             Container(
                 Select.from_values(
-                    ("AUTO", "PNG", "WEBP", "JPEG", "HEIC"),
-                    value=self.data["image_format"].upper(),
+                    self.IMAGE_FORMATS,
+                    value=self.data["image_format"],
                     allow_blank=False,
                     id="image_format",
                 ),
                 Select.from_values(
-                    ["zh_CN", "en_US"],
+                    self.LANGUAGES,
                     value=self.data["language"],
                     allow_blank=False,
                     id="language",
                 ),
                 Select.from_values(
-                    ["resolution", "bitrate", "size"],
+                    self.VIDEO_PREFERENCES,
                     value=self.data["video_preference"],
                     allow_blank=False,
                     id="video_preference",
@@ -256,9 +322,9 @@ class Setting(Screen):
                 "user_agent": self.query_one("#user_agent").value,
                 "cookie": self.query_one("#cookie").value or self.data["cookie"],
                 "proxy": self.query_one("#proxy").value or None,
-                "timeout": int(self.query_one("#timeout").value),
-                "chunk": int(self.query_one("#chunk").value),
-                "max_retry": int(self.query_one("#max_retry").value),
+                "timeout": self.__integer_value("#timeout", "timeout"),
+                "chunk": self.__integer_value("#chunk", "chunk"),
+                "max_retry": self.__integer_value("#max_retry", "max_retry"),
                 "record_data": self.query_one("#record_data").value,
                 "image_format": self.query_one("#image_format").value.lower(),
                 "folder_mode": self.query_one("#folder_mode").value,
@@ -274,6 +340,10 @@ class Setting(Screen):
                 "note_format": self.query_one("#note_format").value,
             }
         )
+
+    def __integer_value(self, selector: str, key: str) -> int:
+        value = self.query_one(selector, Input).value
+        return int(value) if value else self.data[key]
 
     @on(Button.Pressed, "#abandon")
     def reset(self):

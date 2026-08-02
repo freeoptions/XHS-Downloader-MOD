@@ -10,6 +10,7 @@ from asyncio import (
 )
 from contextlib import suppress
 from datetime import datetime
+from random import uniform
 from re import compile
 from urllib.parse import urlparse
 from textwrap import dedent
@@ -98,6 +99,9 @@ class Print:
 
 
 class XHS:
+    RETRY_INITIAL_DELAY_RANGE = (40.0, 70.0)
+    RETRY_ITEM_DELAY_RANGE = (7.0, 20.0)
+    RETRY_REQUEST_TIMEOUT = 20
     VERSION_MAJOR = VERSION_MAJOR
     VERSION_MINOR = VERSION_MINOR
     VERSION_BETA = VERSION_BETA
@@ -125,25 +129,25 @@ class XHS:
     def __init__(
         self,
         mapping_data: dict | None = None,
-        work_path="",
-        folder_name="Download",
+        work_path=r"E:\@imFile-Download",
+        folder_name="XHS-Download",
         name_format="发布时间 作者昵称 作品标题",
         user_agent: str = USERAGENT,
         cookie: str = "",
         proxy: str | dict | None = None,
         timeout=10,
-        chunk=1024 * 1024,
+        chunk=1024 * 1024 * 2,
         max_retry=5,
-        record_data=False,
-        image_format="JPEG",
+        record_data=True,
+        image_format="PNG",
         image_download=True,
         video_download=True,
-        live_download=False,
+        live_download=True,
         video_preference="resolution",
-        folder_mode=False,
+        folder_mode=True,
         download_record=True,
-        author_archive=False,
-        write_mtime=False,
+        author_archive=True,
+        write_mtime=True,
         language="zh_CN",
         # read_cookie: int | str = None,
         script_server: bool = False,
@@ -196,6 +200,7 @@ class XHS:
         self.data_recorder = DataRecorder(self.manager)
         self.note_generator = NoteGenerator(self.manager.note_format)
         self.clipboard_cache: str = ""
+        self.last_failed_urls: list[str] = []
         self.queue = Queue()
         self.event = Event()
         self.script = None
@@ -287,6 +292,7 @@ class XHS:
         index: list | tuple | None = None,
         data=True,
     ) -> list[dict]:
+        self.last_failed_urls = []
         if not (
             urls := await self.extract_links(
                 url,
@@ -301,20 +307,111 @@ class XHS:
             skip=0,
         )
         self.logging(_("共 {0} 个小红书作品待处理...").format(statistics.all))
-        result = [
-            await self.__deal_extract(
-                i,
+        result = await self._process_batch(
+            urls,
+            download,
+            index,
+            data,
+            statistics,
+        )
+        self.show_statistics(
+            statistics,
+        )
+        return result
+
+    async def _process_batch(
+        self,
+        urls: list[str],
+        download: bool,
+        index: list | tuple | None,
+        data: bool,
+        statistics: SimpleNamespace,
+    ) -> list[dict]:
+        result = []
+        retry_queue = []
+        final_failed_urls = []
+        for position, current_url in enumerate(urls):
+            fail_count = statistics.fail
+            item_result = await self.__deal_extract(
+                current_url,
                 download,
                 index,
                 data,
                 count=statistics,
             )
-            for i in urls
-        ]
-        self.show_statistics(
-            statistics,
-        )
+            result.append(item_result)
+            if statistics.fail > fail_count:
+                if item_result:
+                    final_failed_urls.append(current_url)
+                else:
+                    retry_queue.append((position, current_url))
+
+        if retry_queue:
+            await self._retry_failed_reads(
+                retry_queue,
+                result,
+                download,
+                index,
+                data,
+                statistics,
+                final_failed_urls,
+            )
+        self.last_failed_urls = list(dict.fromkeys(final_failed_urls))
         return result
+
+    async def _retry_failed_reads(
+        self,
+        retry_queue: list[tuple[int, str]],
+        result: list[dict],
+        download: bool,
+        index: list | tuple | None,
+        data: bool,
+        statistics: SimpleNamespace,
+        final_failed_urls: list[str],
+    ) -> None:
+        total = len(retry_queue)
+        initial_delay = uniform(*self.RETRY_INITIAL_DELAY_RANGE)
+        self.logging(
+            f"首轮处理完成，{total} 个作品读取失败，已加入待重试队列。"
+            f"将在 {initial_delay:.1f} 秒后开始重试。",
+            WARNING,
+        )
+        await sleep(initial_delay)
+
+        recovered = 0
+        for retry_position, (result_position, current_url) in enumerate(
+            retry_queue,
+            start=1,
+        ):
+            if retry_position > 1:
+                item_delay = uniform(*self.RETRY_ITEM_DELAY_RANGE)
+                self.logging(
+                    f"等待 {item_delay:.1f} 秒后重试下一个作品...",
+                )
+                await sleep(item_delay)
+
+            item_id = self.__extract_link_id(current_url)
+            self.logging(f"开始重试作品（{retry_position}/{total}）：{item_id}")
+            statistics.fail -= 1
+            fail_count = statistics.fail
+            item_result = await self.__deal_extract(
+                current_url,
+                download,
+                index,
+                data,
+                count=statistics,
+                request_timeout=self.RETRY_REQUEST_TIMEOUT,
+            )
+            result[result_position] = item_result
+            if statistics.fail > fail_count or not item_result:
+                final_failed_urls.append(current_url)
+            else:
+                recovered += 1
+
+        self.logging(
+            f"待重试队列处理完成：恢复 {recovered} 个，仍失败 {total - recovered} 个。",
+            WARNING if recovered < total else INFO,
+        )
 
     def show_statistics(
         self,
@@ -356,16 +453,13 @@ class XHS:
                 fail=0,
                 skip=0,
             )
-            [
-                await self.__deal_extract(
-                    u,
-                    download,
-                    index,
-                    data,
-                    count=statistics,
-                )
-                for u in url
-            ]
+            await self._process_batch(
+                url,
+                download,
+                index,
+                data,
+                statistics,
+            )
             self.show_statistics(
                 statistics,
             )
@@ -410,6 +504,7 @@ class XHS:
         data: bool,
         cookie: str = None,
         proxy: str = None,
+        request_timeout: int | None = None,
         count=SimpleNamespace(
             all=0,
             success=0,
@@ -423,14 +518,28 @@ class XHS:
             count.skip += 1
             return id_, {"message": msg}
         self.logging(_("开始处理作品：{0}").format(id_))
+        request_options = (
+            {"timeout": request_timeout} if request_timeout is not None else {}
+        )
         html = await self.html.request_url(
             url,
             cookie=cookie,
             proxy=proxy,
+            **request_options,
         )
         namespace = self.__generate_data_object(html)
         if not namespace:
-            self.logging(_("{0} 获取数据失败").format(id_), ERROR)
+            diagnostic = self.html.last_response_diagnostic()
+            self.logging(
+                _("{0} 获取数据失败").format(id_)
+                + f"：{diagnostic}",
+                ERROR,
+            )
+            if self.html.save_failure_diagnostic(id_, diagnostic) and not (
+                self.html.failure_log_announced
+            ):
+                self.logging(f"失败诊断日志：{self.html.failure_log_path}")
+                self.html.failure_log_announced = True
             count.fail += 1
             return id_, {}
         return id_, namespace
@@ -488,6 +597,7 @@ class XHS:
         data: bool,
         cookie: str | None = None,
         proxy: str | None = None,
+        request_timeout: int | None = None,
         count=SimpleNamespace(
             all=0,
             success=0,
@@ -500,6 +610,7 @@ class XHS:
             data,
             cookie,
             proxy,
+            request_timeout,
             count,
         )
         if not isinstance(namespace, Namespace):

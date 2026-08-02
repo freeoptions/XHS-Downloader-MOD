@@ -17,11 +17,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            executable: dist/XHS-Downloader/XHS-Downloader.exe
+            executable: dist/XHS-Downloader/XHS-Downloader-MOD.exe
             artifact: XHS-Downloader_Windows_X64
 
           - os: windows-11-arm
-            executable: dist/XHS-Downloader/XHS-Downloader.exe
+            executable: dist/XHS-Downloader/XHS-Downloader-MOD.exe
             artifact: XHS-Downloader_Windows_ARM64
 
           - os: macos-15-intel

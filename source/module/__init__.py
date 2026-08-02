@@ -14,6 +14,7 @@ from .static import (
     VERSION_MINOR,
     VERSION_BETA,
     ROOT,
+    RESOURCE_ROOT,
     REPOSITORY,
     LICENCE,
     RELEASES,

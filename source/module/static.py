@@ -5,10 +5,23 @@ VERSION_MAJOR = 2
 VERSION_MINOR = 8
 VERSION_BETA = True
 __VERSION__ = f"{VERSION_MAJOR}.{VERSION_MINOR}.{'beta' if VERSION_BETA else 'stable'}"
+_SOURCE_ROOT = Path(__file__).resolve().parent.parent.parent
+_COMPILED = globals().get("__compiled__")
+_FROZEN = getattr(sys, "frozen", False)
+_EXECUTABLE_ROOT = (
+    Path(_COMPILED.containing_dir).resolve()
+    if _COMPILED and getattr(_COMPILED, "containing_dir", None)
+    else Path(sys.executable).resolve().parent
+)
+RESOURCE_ROOT = (
+    _SOURCE_ROOT
+    if _COMPILED or not _FROZEN
+    else Path(getattr(sys, "_MEIPASS", _EXECUTABLE_ROOT)).resolve()
+)
 ROOT = (
-    Path(sys.executable).resolve().parent.joinpath("Volume")
-    if getattr(sys, "frozen", False)
-    else Path(__file__).resolve().parent.parent.parent.joinpath("Volume")
+    _EXECUTABLE_ROOT.joinpath("Volume")
+    if _COMPILED or _FROZEN
+    else _SOURCE_ROOT.joinpath("Volume")
 )
 ROOT.mkdir(exist_ok=True)
 PROJECT = f"XHS-Downloader V{VERSION_MAJOR}.{VERSION_MINOR} {

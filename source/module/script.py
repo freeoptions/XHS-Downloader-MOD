@@ -1,6 +1,7 @@
 from contextlib import suppress
 from json import loads
-from websockets import ConnectionClosed, serve
+from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosed
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

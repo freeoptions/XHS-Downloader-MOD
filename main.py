@@ -8,7 +8,6 @@ from source import XHS
 from source import XHSDownloader
 from source import cli
 
-
 async def app():
     async with XHSDownloader() as xhs:
         await xhs.run_async()
