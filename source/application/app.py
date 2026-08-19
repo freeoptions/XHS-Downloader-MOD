@@ -386,6 +386,8 @@ class XHS:
             if statistics.fail > fail_count:
                 if item_result:
                     final_failed_urls.append(current_url)
+                elif self._is_not_found_failure():
+                    final_failed_urls.append(current_url)
                 else:
                     retry_queue.append((position, current_url))
 
@@ -875,6 +877,13 @@ class XHS:
 
     async def has_download_record(self, id_: str) -> bool:
         return bool(await self.id_recorder.select(id_))
+
+    def _is_not_found_failure(self) -> bool:
+        html = getattr(self, "html", None)
+        final_path = str(
+            getattr(html, "last_response", {}).get("final_path") or ""
+        )
+        return final_path.rstrip("/").endswith("/404")
 
     async def __aenter__(self):
         await self.id_recorder.__aenter__()

@@ -107,3 +107,43 @@ class RetryQueueTest(IsolatedAsyncioTestCase):
         sleep_mock.assert_not_awaited()
         self.assertEqual(statistics.fail, 1)
         self.assertEqual(xhs.last_failed_urls, ["download-fail"])
+
+    async def test_404_read_failure_is_kept_but_not_retried(self):
+        xhs = object.__new__(XHS)
+        xhs.last_failed_urls = []
+        xhs.html = SimpleNamespace(
+            last_response={
+                "final_path": "https://www.xiaohongshu.com/404",
+            },
+        )
+        xhs.logging = MethodType(lambda *_: None, xhs)
+
+        async def fake_deal_extract(
+            _,
+            url,
+            download,
+            index,
+            data,
+            cookie=None,
+            proxy=None,
+            request_timeout=None,
+            count=None,
+        ):
+            count.fail += 1
+            return {}
+
+        xhs._XHS__deal_extract = MethodType(fake_deal_extract, xhs)
+        statistics = SimpleNamespace(all=1, success=0, fail=0, skip=0)
+
+        with patch("source.application.app.sleep", new=AsyncMock()) as sleep_mock:
+            await xhs._process_batch(
+                ["404-failure"],
+                True,
+                None,
+                False,
+                statistics,
+            )
+
+        sleep_mock.assert_not_awaited()
+        self.assertEqual(statistics.fail, 1)
+        self.assertEqual(xhs.last_failed_urls, ["404-failure"])
