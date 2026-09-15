@@ -372,15 +372,21 @@ class XHS:
         final_failed_urls = []
         for position, current_url in enumerate(urls):
             fail_count = statistics.fail
+            extract_options = {
+                "proxy": proxy,
+                "count": statistics,
+            }
+            if progress_callback is not None or task_id is not None:
+                extract_options.update(
+                    progress_callback=progress_callback,
+                    task_id=task_id,
+                )
             item_result = await self.__deal_extract(
                 current_url,
                 download,
                 index,
-                check_record=check_record,
-                proxy=proxy,
-                count=statistics,
-                progress_callback=progress_callback,
-                task_id=task_id,
+                check_record,
+                **extract_options,
             )
             result.append(item_result)
             if statistics.fail > fail_count:
@@ -441,20 +447,26 @@ class XHS:
                 )
                 await sleep(item_delay)
 
-            item_id = self.__extract_link_id(current_url)
+            item_id = self.extract_link_id(current_url)
             self.logging(f"开始重试作品（{retry_position}/{total}）：{item_id}")
             statistics.fail -= 1
             fail_count = statistics.fail
+            extract_options = {
+                "proxy": proxy,
+                "count": statistics,
+                "request_timeout": self.RETRY_REQUEST_TIMEOUT,
+            }
+            if progress_callback is not None or task_id is not None:
+                extract_options.update(
+                    progress_callback=progress_callback,
+                    task_id=task_id,
+                )
             item_result = await self.__deal_extract(
                 current_url,
                 download,
                 index,
-                check_record=check_record,
-                proxy=proxy,
-                count=statistics,
-                progress_callback=progress_callback,
-                task_id=task_id,
-                request_timeout=self.RETRY_REQUEST_TIMEOUT,
+                check_record,
+                **extract_options,
             )
             result[result_position] = item_result
             if statistics.fail > fail_count or not item_result:

@@ -143,18 +143,6 @@
                 </svg>
                 <span data-i18n="nav.settings"></span>
             </button>
-            <button class="nav-item" type="button" data-view="disclaimer">
-                <svg>
-                    <use href="#info"/>
-                </svg>
-                <span data-i18n="nav.disclaimer"></span>
-            </button>
-            <button class="nav-item" type="button" data-view="about">
-                <svg>
-                    <use href="#external"/>
-                </svg>
-                <span data-i18n="nav.about"></span>
-            </button>
         </nav>
     </aside>
 
@@ -583,105 +571,11 @@
                 </div>
             </section>
 
-            <section class="view disclaimer-view" data-page="disclaimer">
-                <section class="surface disclaimer-panel">
-                    <pre class="disclaimer-text" data-i18n="disclaimer.content"></pre>
-                </section>
-            </section>
-
-            <section class="view about-view" data-page="about">
-                <section class="about-panel">
-                    <div class="about-identity">
-                        <img src="../XHS-Downloader.png" alt="XHS-Downloader">
-                        <div class="about-copy">
-                            <h2>XHS-Downloader</h2>
-                            <p data-i18n="about.description"></p>
-                        </div>
-                    </div>
-                    <div class="about-details">
-                        <div><span data-i18n="about.version"></span><strong id="aboutVersion">-</strong></div>
-                        <div><span data-i18n="about.author"></span><strong id="aboutAuthor">-</strong></div>
-                        <div><span data-i18n="about.license"></span><strong id="aboutLicense">-</strong></div>
-                        <div><span data-i18n="about.repository"></span>
-                            <button class="about-detail-link" type="button"
-                                    data-about-key="repository">
-                                <strong id="aboutRepository">-</strong>
-                                <svg>
-                                    <use href="#external"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="about-community">
-                        <p class="about-support" data-i18n="about.support"></p>
-                        <section class="about-link-group">
-                            <h3 data-i18n="about.community"></h3>
-                            <button class="about-link" type="button" data-about-key="discord">
-                                <span data-i18n="about.invite_link"></span>
-                                <strong>-</strong>
-                                <svg>
-                                    <use href="#external"/>
-                                </svg>
-                            </button>
-                        </section>
-                        <section class="about-link-group">
-                            <h3 data-i18n="about.other_projects"></h3>
-                            <button class="about-link" type="button" data-about-key="tk">
-                                <span data-i18n="about.project_tk"></span>
-                                <strong>-</strong>
-                                <svg>
-                                    <use href="#external"/>
-                                </svg>
-                            </button>
-                            <button class="about-link" type="button" data-about-key="ks">
-                                <span data-i18n="about.project_ks"></span>
-                                <strong>-</strong>
-                                <svg>
-                                    <use href="#external"/>
-                                </svg>
-                            </button>
-                        </section>
-                    </div>
-                    <div class="about-actions">
-                        <div class="about-update-result" id="aboutUpdateResult" hidden>
-                            <svg>
-                                <use href="#info"/>
-                            </svg>
-                            <span></span>
-                        </div>
-                        <button class="secondary-button" type="button" data-about-key="repository">
-                            <svg>
-                                <use href="#external"/>
-                            </svg>
-                            <span data-i18n="about.open_repository"></span></button>
-                        <button class="primary-button" id="pageCheckUpdate" type="button">
-                            <svg>
-                                <use href="#refresh"/>
-                            </svg>
-                            <span data-i18n="update.check"></span></button>
-                    </div>
-                </section>
-            </section>
         </main>
     </section>
 </div>
 
 <div class="toast-region" id="toastRegion"></div>
-
-<dialog class="modal disclaimer-modal" id="disclaimerModal" data-blocking="true">
-    <div class="modal-body">
-        <pre class="disclaimer-text" data-i18n="disclaimer.content"></pre>
-    </div>
-    <div class="modal-footer">
-        <button class="primary-button" type="button" id="acceptDisclaimer">
-            <svg>
-                <use href="#check"/>
-            </svg>
-            <span data-i18n="disclaimer.confirm"></span></button>
-        <button class="secondary-button" type="button" id="declineDisclaimer"
-                data-i18n="disclaimer.decline"></button>
-    </div>
-</dialog>
 
 <dialog class="modal compact-modal" id="recordModal">
     <div class="modal-head">

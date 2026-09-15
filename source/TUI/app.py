@@ -6,12 +6,10 @@ from ..module import (
     VOLUME,
     Settings,
 )
-from .about import About
 from .index import Index
 from .loading import Loading
 from .record import Record
 from .setting import Setting
-from .update import Update
 
 __all__ = ["XHSDownloader"]
 
@@ -49,7 +47,6 @@ class XHSDownloader(App):
             name="index",
         )
         self.install_screen(Loading(), name="loading")
-        self.install_screen(About(), name="about")
         self.install_screen(
             Record(
                 self.APP,
@@ -74,7 +71,6 @@ class XHSDownloader(App):
         await self.APP.switch_script_server()
         self.uninstall_screen("index")
         self.uninstall_screen("loading")
-        self.uninstall_screen("about")
         self.uninstall_screen("record")
         self.install_screen(
             Index(
@@ -83,7 +79,6 @@ class XHSDownloader(App):
             name="index",
         )
         self.install_screen(Loading(), name="loading")
-        self.install_screen(About(), name="about")
         self.install_screen(
             Record(
                 self.APP,
@@ -91,20 +86,6 @@ class XHSDownloader(App):
             name="record",
         )
         await self.push_screen("index")
-
-    def update_result(self, args: tuple[str, str]) -> None:
-        self.notify(
-            args[0],
-            severity=args[1],
-        )
-
-    async def action_update(self):
-        await self.push_screen(
-            Update(
-                self.APP,
-            ),
-            callback=self.update_result,
-        )
 
     async def close_database(self):
         await self.APP.id_recorder.cursor.close()

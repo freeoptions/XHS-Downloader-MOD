@@ -1,14 +1,12 @@
 // ==UserScript==
 // @name           XHS-Downloader
 // @namespace      xhs_downloader
-// @homepage       https://github.com/JoeanAmier/XHS-Downloader
 // @version        2.4.3
 // @tag            小红书
 // @tag            RedNote
 // @tag            XiaoHongShu
 // @description    提取小红书作品/用户链接，下载小红书图文/视频作品文件
 // @description:en Extract RedNote works/user links, Download images/videos files
-// @author         JoeanAmier
 // @match          http*://www.xiaohongshu.com/explore*
 // @match          http*://www.xiaohongshu.com/discovery/item/*
 // @match          http*://www.xiaohongshu.com/user/profile/*
@@ -28,9 +26,6 @@
 // @grant          GM_unregisterMenuCommand
 // @license        GNU General Public License v3.0
 // @run-at         document-end
-// @updateURL      https://raw.githubusercontent.com/JoeanAmier/XHS-Downloader/master/static/XHS-Downloader.js
-// @downloadURL    https://raw.githubusercontent.com/JoeanAmier/XHS-Downloader/master/static/XHS-Downloader.js
-// @supportURL     https://github.com/JoeanAmier/XHS-Downloader/issues
 // @require        https://cdnjs.cloudflare.com/ajax/libs/jszip/3.9.1/jszip.min.js
 // ==/UserScript==
 
@@ -57,47 +52,13 @@
 5. 如果未开启自动滚动页面功能，用户需要手动滚动页面以便加载更多内容后再进行其他操作
 6. 支持作品文件打包下载；该功能默认开启，多个文件的作品将会以压缩包格式下载
 7. 向服务器推送下载任务时，文件格式、名称规则等设置以服务器配置文件中的设置为准
-8. 使用全局代理工具可能会导致脚本下载文件失败，如有异常，请尝试关闭代理工具，必要时向作者反馈
-9. XHS-Downloader 用户脚本仅实现可见即可得的数据采集功能，无任何收费功能和破解功能
-
-项目开源地址：https://github.com/JoeanAmier/XHS-Downloader
-`,
-            disclaimerText: `1. 使用者对本项目的使用由使用者自行决定，并自行承担风险。作者对使用者使用本项目所产生的任何损失、责任、或风险概不负责。
-2. 本项目的作者提供的代码和功能是基于现有知识和技术的开发成果。作者按现有技术水平努力确保代码的正确性和安全性，但不保证代码完全没有错误或缺陷。
-3. 本项目依赖的所有第三方库、插件或服务各自遵循其原始开源或商业许可，使用者需自行查阅并遵守相应协议，作者不对第三方组件的稳定性、安全性及合规性承担任何责任。
-4. 使用者在使用本项目时必须严格遵守 GNU General Public License v3.0 的要求，并在适当的地方注明使用了 GNU General Public License v3.0 的代码。
-5. 使用者在使用本项目的代码和功能时，必须自行研究相关法律法规，并确保其使用行为合法合规。任何因违反法律法规而导致的法律责任和风险，均由使用者自行承担。
-6. 使用者不得使用本工具从事任何侵犯知识产权的行为，包括但不限于未经授权下载、传播受版权保护的内容，开发者不参与、不支持、不认可任何非法内容的获取或分发。
-7. 本项目不对使用者涉及的数据收集、存储、传输等处理活动的合规性承担责任。使用者应自行遵守相关法律法规，确保处理行为合法正当；因违规操作导致的法律责任由使用者自行承担。
-8. 使用者在任何情况下均不得将本项目的作者、贡献者或其他相关方与使用者的使用行为联系起来，或要求其对使用者使用本项目所产生的任何损失或损害负责。
-9. 本项目的作者不会提供 XHS-Downloader 项目的付费版本，也不会提供与 XHS-Downloader 项目相关的任何商业服务。
-10. 基于本项目进行的任何二次开发、修改或编译的程序与原创作者无关，原创作者不承担与二次开发行为或其结果相关的任何责任，使用者应自行对因二次开发可能带来的各种情况负全部责任。
-11. 本项目不授予使用者任何专利许可；若使用本项目导致专利纠纷或侵权，使用者自行承担全部风险和责任。未经作者或权利人书面授权，不得使用本项目进行任何商业宣传、推广或再授权。
-12. 作者保留随时终止向任何违反本声明的使用者提供服务的权利，并可能要求其销毁已获取的代码及衍生作品。
-13. 作者保留在不另行通知的情况下更新本声明的权利，使用者持续使用即视为接受修订后的条款。
-
-在使用本项目的代码和功能之前，请您认真考虑并接受以上免责声明。如果您对上述声明有任何疑问或不同意，请不要使用本项目的代码和功能。如果您使用了本项目的代码和功能，则视为您已完全理解并接受上述免责声明，并自愿承担使用本项目的一切风险和后果。
+8. 使用全局代理工具可能会导致脚本下载文件失败，如有异常，请检查代理设置后重试
 `,
             readmeTitle: 'XHS-Downloader 脚本说明',
-            disclaimerTitle: 'XHS-Downloader 免责声明',
-            disclaimerConfirm: '我已知晓',
-            readmeMenuTitle: "阅读脚本说明和免责声明",
+            readmeMenuTitle: "阅读脚本说明",
             switchToLanguageMenuText: "切换到中文",
-            aboutText: `项目开源协议：GNU General Public License v3.0
-项目开源地址：https://github.com/JoeanAmier/XHS-Downloader
-
-如果 XHS-Downloader 对您有帮助，请考虑为它点个 Star ⭐，感谢您的支持！
-
-✨ 作者的其他开源项目：
-
-DouK-Downloader（抖音、DouYin、TikTok）：https://github.com/JoeanAmier/TikTokDownloader
-KS-Downloader（快手、KuaiShou）：https://github.com/JoeanAmier/KS-Downloader
-
-项目 Discord 社区：https://discord.com/invite/ZYtmgKud9Y
-`,
-            aboutTitle: '关于 XHS-Downloader',
             errorTitle: '发生异常',
-            errorText: (text) => `${text}请向作者反馈！\n项目开源地址：https://github.com/JoeanAmier/XHS-Downloader`,
+            errorText: (text) => text,
             imageExtractError: "解析图文作品数据发生异常！",
             downloadLinkError: "处理下载链接发生异常！",
             downloadTips: "正在下载文件，请稍等...",
@@ -184,8 +145,6 @@ KS-Downloader（快手、KuaiShou）：https://github.com/JoeanAmier/KS-Download
             extractAlbumNotesLinksDescription: '提取当前专辑的作品链接至剪贴板',
             modifyScriptSettingsText: '修改用户脚本设置',
             modifyScriptSettingsDescription: '修改用户脚本设置',
-            aboutXHSText: '关于 XHS-Downloader',
-            aboutXHSDescription: '查看 XHS-Downloader 更多信息',
             imageCheckboxTitle: '请选中需要下载的图片',
             scriptServerError: '脚本服务器连接出错，请检查网络连接或脚本服务器状态是否正常！',
             pushTaskError: '脚本服务器未连接，请检查网络连接或脚本服务器状态是否正常！',
@@ -213,47 +172,13 @@ Notes:
 5. If auto-scroll is disabled, users must manually scroll the page to load more content before performing extractions.
 6. Supports batch downloading (ZIP format); this feature is enabled by default. Notes with multiple files will be downloaded as a compressed package.
 7. When pushing tasks to a server, settings such as file format and naming rules are determined by the server's configuration file.
-8. Using global proxy tools may cause download failures. If issues occur, try disabling the proxy and provide feedback to the author if necessary.
-9. The XHS-Downloader userscript only provides "what you see is what you get" data collection; it contains no paid features or decryption/cracking functions.
-
-Open Source: https://github.com/JoeanAmier/XHS-Downloader
-`,
-            disclaimerText: `1. The use of this project is at the user's own discretion and risk. The author is not responsible for any loss, liability, or risk arising from its use.
-2. The code and functions provided are based on existing knowledge and technology. While efforts are made to ensure correctness and security, the author does not guarantee that the code is entirely error-free.
-3. All third-party libraries, plugins, or services relied upon by this project follow their own original open-source or commercial licenses. Users must consult and comply with those agreements.
-4. Users must strictly adhere to the GNU General Public License v3.0 requirements and credit the use of GPL v3.0 code where appropriate.
-5. Users must research relevant laws and regulations to ensure their use of this project is legal and compliant. Any legal liability arising from violations is borne solely by the user.
-6. Users must not use this tool for any acts that infringe on intellectual property rights, including but not limited to unauthorized downloading or distribution of copyrighted content.
-7. This project assumes no responsibility for the compliance of data collection, storage, or transmission activities performed by the user.
-8. Under no circumstances shall the author or contributors be held liable for any damages or losses related to the user's actions.
-9. The author will not provide a paid version of XHS-Downloader, nor any commercial services related to the project.
-10. Any secondary development, modification, or compilation of this program is unrelated to the original author. The user is solely responsible for any consequences of such actions.
-11. This project does not grant any patent licenses. The user assumes all risks regarding patent disputes. Commercial promotion or sub-licensing without written authorization is prohibited.
-12. The author reserves the right to terminate service to any user violating this disclaimer and may request the destruction of obtained code.
-13. The author reserves the right to update this disclaimer without notice. Continued use constitutes acceptance of the revised terms.
-
-Before using this project, please carefully consider and accept the above disclaimer. If you have any doubts or disagree, do not use the code or functions. Use of the project implies full understanding and acceptance of these terms.
+8. Using global proxy tools may cause download failures. If issues occur, check the proxy settings and try again.
 `,
             readmeTitle: 'XHS-Downloader Instructions',
-            disclaimerTitle: 'XHS-Downloader Disclaimer',
-            disclaimerConfirm: 'I acknowledge',
-            readmeMenuTitle: "Read Instructions and Disclaimer",
+            readmeMenuTitle: "Read Script Instructions",
             switchToLanguageMenuText: "Switch to English",
-            aboutText: `License: GNU General Public License v3.0
-GitHub: https://github.com/JoeanAmier/XHS-Downloader
-
-If XHS-Downloader helps you, please consider giving it a Star ⭐. Thanks for your support!
-
-✨ Other Projects by the Author:
-
-DouK-Downloader (DouYin, TikTok): https://github.com/JoeanAmier/TikTokDownloader
-KS-Downloader (KuaiShou): https://github.com/JoeanAmier/KS-Downloader
-
-Discord Community: https://discord.com/invite/ZYtmgKud9Y
-`,
-            aboutTitle: 'About XHS-Downloader',
             errorTitle: 'Exception Occurred',
-            errorText: (text) => `${text} Please report this to the author!\nGitHub: https://github.com/JoeanAmier/XHS-Downloader`,
+            errorText: (text) => text,
             imageExtractError: "Error parsing image note data!",
             downloadLinkError: "Error processing download links!",
             downloadTips: "Downloading file, please wait...",
@@ -340,8 +265,6 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             extractAlbumNotesLinksDescription: 'Extract note links from the current album',
             modifyScriptSettingsText: 'Modify Script Settings',
             modifyScriptSettingsDescription: '',
-            aboutXHSText: 'About XHS-Downloader',
-            aboutXHSDescription: '',
             imageCheckboxTitle: 'Please select images to download',
             scriptServerError: 'Server connection error. Please check your network or server status!',
             pushTaskError: 'Server not connected. Please check your network or server status!',
@@ -412,7 +335,6 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     const storedFileNameFormatKeys = parseFileNameFormat(GM_getValue("fileNameFormat", defaultFileNameFormatKeys));
 
     let config = {
-        disclaimer: GM_getValue("disclaimer", false),
         packageDownloadFiles: GM_getValue("packageDownloadFiles", true),
         autoScrollSwitch: GM_getValue("autoScrollSwitch", false),
         maxScrollCount: GM_getValue("maxScrollCount", 50),
@@ -444,25 +366,12 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         await showTextModal({
                                 title: t.readmeTitle, text: t.instructionsText, mode: 'info', closeText: t.closeButton
                             });
-        if (!config.disclaimer) {
-            showTextModal({
-                              title: t.disclaimerTitle,
-                              text: t.disclaimerText,
-                              mode: 'confirm',
-                              confirmText: t.disclaimerConfirm,
-                              closeText: t.closeButton
-                          }).then(answer => {
-                GM_setValue("disclaimer", answer);
-                config.disclaimer = answer;
-            });
-        }
     };
 
-    if (!config.disclaimer) {
+    if (!GM_getValue("instructionsShown", false)) {
+        GM_setValue("instructionsShown", true);
         readme().then();
     }
-
-    console.info("用户接受 XHS-Downloader 免责声明", config.disclaimer)
 
     let registeredMenuCommandIds = [];
 
@@ -565,12 +474,6 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         config.fileNameFormatKeys = parseFileNameFormat(value);
         GM_setValue("fileNameFormat", config.fileNameFormatKeys);
     };
-
-    const about = () => {
-        showTextModal({
-                          title: t.aboutTitle, text: t.aboutText, mode: 'info', closeText: t.closeButton
-                      }).then();
-    }
 
     const abnormal = (text) => {
         showTextModal({
@@ -3074,11 +2977,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         currentUrl = window.location.href;
         const menuItems = [];
 
-        if (!config.disclaimer) {
-            menuItems.push({
-                               text: 'README', icon: ' 📄 ', action: readme, description: t.readmeMenuTitle
-                           },);
-        } else if (currentUrl === `https://www.${currentSite}.com/explore` || currentUrl.includes(
+        if (currentUrl === `https://www.${currentSite}.com/explore` || currentUrl.includes(
             `https://www.${currentSite}.com/explore?`)) {
             menuItems.push({
                                text: t.extractRecommendLinksText,
@@ -3144,12 +3043,15 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         menuItems.push({
                            separator: true
                        }, {
+            text: t.readmeMenuTitle,
+            icon: ' 📄 ',
+            action: readme,
+            description: t.readmeMenuTitle
+                       }, {
             text: t.modifyScriptSettingsText,
             icon: ' ⚙️ ',
             action: showSettings,
             description: t.modifyScriptSettingsDescription
-                       }, {
-                           text: t.aboutXHSText, icon: ' 📒 ', action: about, description: t.aboutXHSDescription
                        });
 
         // 创建菜单项

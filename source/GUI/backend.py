@@ -8,29 +8,17 @@ from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from re import search
 from subprocess import DEVNULL, Popen
 from threading import Event, Thread
 from typing import Any
 from urllib.parse import urlsplit
 from uuid import uuid4
-from webbrowser import open as open_browser
 
 import webview
 from pyperclip import copy, paste
 
 from ..application import XHS
-from ..module import (
-    LICENCE,
-    RELEASES,
-    REPOSITORY,
-    VERSION_BETA,
-    VERSION_MAJOR,
-    VERSION_MINOR,
-    VOLUME,
-    Settings,
-    compare_versions,
-)
+from ..module import Settings, VOLUME
 from ..translation import _
 from .ui_strings import (
     NAME_FORMAT_FIELDS,
@@ -40,14 +28,6 @@ from .ui_strings import (
 
 # 下载记录固定按每页 100 条返回，前端仅负责渲染当前页。
 HISTORY_PAGE_SIZE = 100
-ABOUT_URLS = {
-    "repository": REPOSITORY,
-    "discord": "https://discord.com/invite/ZYtmgKud9Y",
-    "tk": "https://github.com/JoeanAmier/TikTokDownloader",
-    "ks": "https://github.com/JoeanAmier/KS-Downloader",
-}
-
-
 def now_text() -> str:
     """返回用于界面显示的本地时间。"""
 
@@ -57,66 +37,6 @@ def now_text() -> str:
 def task_display_id(url: str) -> str:
     parts = urlsplit(url)
     return parts.path.rstrip("/").rsplit("/", 1)[-1]
-
-
-def build_update_result(release_url: str) -> dict[str, Any]:
-    """根据 GitHub 重定向后的发布页 URL 构造界面可直接展示的更新结果。"""
-
-    tag = release_url.rstrip("/").split("/")[-1]
-    match = search(r"(?<!\d)(\d+)\.(\d+)(?!\d)", tag)
-    if not match:
-        return {
-            "status": "error",
-            "message": _("无法解析版本号：{0}").format(tag),
-        }
-
-    target = tuple(map(int, match.groups()))
-    current = (VERSION_MAJOR, VERSION_MINOR)
-    latest_version = f"{target[0]}.{target[1]}"
-    current_version = f"{VERSION_MAJOR}.{VERSION_MINOR}"
-    if VERSION_BETA:
-        current_version += " Beta"
-
-    match compare_versions(
-        f"{current[0]}.{current[1]}",
-        latest_version,
-        VERSION_BETA,
-    ):
-        case 4:
-            kind = "update_available"
-            title = _("检测到新版本：{0}.{1}").format(
-                target[0],
-                target[1],
-            )
-            message = _("当前版本为 {0}").format(current_version)
-        case 3:
-            kind = "stable_available"
-            title = _("当前版本为开发版, 可更新至正式版")
-            message = _("{0} 正式版已发布，当前版本为 {1}").format(
-                latest_version, current_version
-            )
-        case 1:
-            kind = "up_to_date"
-            title = _("当前已是最新正式版")
-            message = _("当前版本为 {0}").format(current_version)
-        case 2:
-            kind = "development_current"
-            title = _("当前已是最新开发版")
-            message = _("当前版本为 {0}，最新正式版为 {1}").format(
-                current_version, latest_version
-            )
-        case _:
-            return {
-                "status": "error",
-                "message": _("版本比较结果无效"),
-            }
-
-    return {
-        "status": "ok",
-        "kind": kind,
-        "title": title,
-        "message": message,
-    }
 
 
 @dataclass
@@ -228,11 +148,9 @@ class GuiBackend:
         self.loop.close()
 
     async def _initialize(self) -> None:
-        """读取配置；用户已同意免责声明后才创建下载器运行时。"""
+        """读取本地配置并启动下载器运行时。"""
 
         self.settings = self.settings_manager.run()
-        if not self.settings["disclaimer_accepted"]:
-            return
         await self._start_runtime()
 
     async def _start_runtime(self) -> None:
@@ -605,22 +523,6 @@ class GuiBackend:
             "name_fields": list(NAME_FORMAT_FIELDS),
         }
 
-    async def get_disclaimer(self) -> dict[str, bool]:
-        """返回免责声明确认状态。"""
-
-        return {
-            "accepted": self.settings["disclaimer_accepted"],
-        }
-
-    async def accept_disclaimer(self) -> dict[str, bool]:
-        """记录用户已同意免责声明，并在首次同意后启动下载器运行时。"""
-
-        if not self.settings["disclaimer_accepted"]:
-            self.settings["disclaimer_accepted"] = True
-            self.settings_manager.update(self.settings)
-        await self._start_runtime()
-        return {"accepted": True}
-
     def _settings_payload(self, values: dict[str, Any] | None = None) -> dict[str, Any]:
         """整理配置给前端；命名字段始终使用 Manager 的中文字段值。"""
 
@@ -690,34 +592,6 @@ class GuiBackend:
         self.add_log(_("配置已保存，下载器已重新加载"), "success")
         return {"ok": True, "settings": self._settings_payload()}
 
-    async def check_update(self) -> dict[str, Any]:
-        """请求 GitHub 发布页并比较版本，返回成功或可展示的错误结果。"""
-
-        if not self.xhs:
-            return {"status": "error", "message": _("下载器尚未初始化")}
-        try:
-            async with self.xhs.html.client.stream(
-                "GET",
-                RELEASES,
-                timeout=8,
-            ) as response:
-                response.raise_for_status()
-                return build_update_result(str(response.url))
-        except Exception as error:
-            self.add_log(f"{_('检测新版本失败')}：{error}", "error")
-            return {
-                "status": "error",
-                "message": _("无法获取最新版本，请检查网络连接后重试"),
-            }
-
-    async def open_url(self, url: str) -> bool:
-        """在线程池中调用系统浏览器打开关于页允许展示的外部链接。"""
-
-        if url not in ABOUT_URLS.values():
-            return False
-
-        return await asyncio.to_thread(open_browser, url)
-
     async def open_download_folder(self) -> bool:
         """打开当前配置实际生效的作品文件储存目录。"""
 
@@ -747,7 +621,6 @@ class GuiBackend:
         tasks = [task.as_dict() for task in self.tasks.values()]
         history_enabled = self.xhs.manager.download_record if self.xhs else False
         return {
-            "disclaimer_accepted": self.settings["disclaimer_accepted"],
             "tasks": tasks,
             "files": list(self.files.values()),
             "history_enabled": history_enabled,
@@ -755,14 +628,6 @@ class GuiBackend:
             "logs": list(self.logs),
             "monitor": dict(self.monitor),
             "settings": self._settings_payload(),
-            "about": {
-                "version": f"{VERSION_MAJOR}.{VERSION_MINOR}",
-                "release": "Beta" if VERSION_BETA else "Stable",
-                "license": LICENCE,
-                "repository": REPOSITORY,
-                "author": "JoeanAmier",
-                "links": dict(ABOUT_URLS),
-            },
         }
 
 
@@ -863,38 +728,10 @@ class GuiApi:
 
         return self._backend.call(self._backend.get_translations())
 
-    def get_disclaimer(self) -> dict[str, bool]:
-        """读取免责声明确认状态。"""
-
-        return self._backend.call(self._backend.get_disclaimer())
-
-    def accept_disclaimer(self) -> dict[str, bool]:
-        """确认免责声明并初始化 GUI 后端运行时。"""
-
-        return self._backend.call(self._backend.accept_disclaimer())
-
-    def decline_disclaimer(self) -> bool:
-        """不同意免责声明时关闭 GUI 窗口。"""
-
-        if not self._window:
-            return False
-        self._window.destroy()
-        return True
-
     def save_settings(self, data: dict[str, Any]) -> dict[str, Any]:
         """保存 GUI 提交的配置。"""
 
         return self._backend.call(self._backend.save_settings(data))
-
-    def check_update(self) -> dict[str, Any]:
-        """检查远端版本并返回可展示的结果。"""
-
-        return self._backend.call(self._backend.check_update())
-
-    def open_url(self, url: str) -> bool:
-        """请求系统浏览器打开关于页允许展示的外部链接。"""
-
-        return self._backend.call(self._backend.open_url(url))
 
     def open_download_folder(self) -> bool:
         """请求系统文件管理器打开当前下载目录。"""

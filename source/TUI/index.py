@@ -5,17 +5,14 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import HorizontalScroll, ScrollableContainer
 from textual.screen import Screen
-from textual.widgets import Button, Footer, Header, Input, Label, Link, RichLog
+from textual.widgets import Button, Footer, Header, Input, Label, RichLog
 
 from ..application import XHS
 from ..module import (
     ERROR,
     GENERAL,
-    LICENCE,
-    MASTER,
     PROJECT,
     PROMPT,
-    REPOSITORY,
     WARNING,
 )
 from ..translation import _
@@ -27,11 +24,9 @@ __all__ = ["Index"]
 class Index(Screen):
     BINDINGS = [
         Binding(key="Q", action="quit", description=_("退出程序")),
-        Binding(key="U", action="update", description=_("检查更新")),
         Binding(key="S", action="settings", description=_("程序设置")),
         Binding(key="R", action="record", description=_("下载记录")),
         Binding(key="M", action="monitor", description=_("开启监听")),
-        Binding(key="A", action="about", description=_("关于项目")),
         Binding(key="ctrl+c", action="copy_text", description="复制"),
     ]
 
@@ -49,15 +44,6 @@ class Index(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         yield ScrollableContainer(
-            Label(Text(_("开源协议: ") + LICENCE, style=MASTER)),
-            Link(
-                Text(
-                    _("项目地址: ") + REPOSITORY,
-                    style=MASTER,
-                ),
-                url=REPOSITORY,
-                tooltip=_("点击访问"),
-            ),
             Label(
                 Text(_("请输入小红书图文/视频作品链接"), style=PROMPT),
                 classes="prompt",
@@ -86,10 +72,6 @@ class Index(Screen):
         self.copy_failed = self.query_one("#copy_failed", Button)
         self.copy_failed.display = False
         self.xhs.print.func = self.tip
-        self.tip.write(
-            Text(_("免责声明\n") + f"\n{'>' * 50}", style=MASTER),
-            scroll_end=True,
-        )
         self.xhs.manager.print_proxy_tip()
 
     @on(Button.Pressed, "#deal")
@@ -176,9 +158,6 @@ class Index(Screen):
     async def action_quit(self) -> None:
         await self.app.action_quit()
 
-    async def action_update(self) -> None:
-        await self.app.run_action("update")
-
     async def action_settings(self):
         await self.app.run_action("settings")
 
@@ -188,9 +167,6 @@ class Index(Screen):
                 self.xhs,
             )
         )
-
-    async def action_about(self):
-        await self.app.push_screen("about")
 
     async def action_record(self):
         await self.app.push_screen("record")

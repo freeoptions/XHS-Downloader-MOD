@@ -36,7 +36,6 @@ class Settings:
         "language": "zh_CN",  # 语言设置
         "script_server": False,  # 是否启用脚本服务器
         "note_format": "",  # 作品信息格式(txt/md/all)
-        "disclaimer_accepted": False,  # 是否已同意免责声明
     }
     # 根据操作系统设置编码格式
     encode = "UTF-8-SIG" if system() == "Windows" else "UTF-8"
@@ -111,6 +110,10 @@ class Settings:
             if i not in data:
                 data[i] = j
                 update = True
+        # 清理旧版 GUI 留下的废弃确认标记。
+        if "disclaimer_accepted" in data:
+            data.pop("disclaimer_accepted")
+            update = True
         if update:
             self.update(data)
         return data

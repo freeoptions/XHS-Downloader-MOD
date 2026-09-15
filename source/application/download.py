@@ -251,14 +251,18 @@ class Download:
         progress: Callable[[dict], None] | None = None,
         task_id: str | None = None,
     ) -> bool:
+        retry_options = (
+            {"progress": progress, "task_id": task_id}
+            if progress is not None or task_id is not None
+            else {}
+        )
         result = await self.__download_with_retry(
             url,
             path,
             name,
             format_,
             mtime,
-            progress,
-            task_id,
+            **retry_options,
         )
         if result:
             return True
@@ -280,8 +284,7 @@ class Download:
                 name,
                 "auto",
                 mtime,
-                progress,
-                task_id,
+                **retry_options,
             )
         )
 

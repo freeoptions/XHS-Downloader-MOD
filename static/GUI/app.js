@@ -8,11 +8,10 @@
     const toastRegion = document.getElementById("toastRegion");
     const startupScreen = document.getElementById("startupScreen");
 
-    const viewNames = new Set(["new_task", "monitor", "queue", "history", "logs", "settings", "disclaimer", "about"]);
+    const viewNames = new Set(["new_task", "monitor", "queue", "history", "logs", "settings"]);
 
     let uiTranslations = Object.create(null);
     let translatedUiInitialized = false;
-    let aboutLinks = Object.create(null);
 
     function translateText(key) {
         return uiTranslations[key];
@@ -131,7 +130,6 @@
         });
     });
 
-    const disclaimerModal = document.getElementById("disclaimerModal");
     const recordModal = document.getElementById("recordModal");
 
     document.querySelectorAll("[data-close-modal]").forEach((button) => {
@@ -147,22 +145,6 @@
             if (event.target === dialog) dialog.close();
         });
     });
-
-    // 更新检查的网络请求由后端执行，前端负责显示检查状态、结果和错误反馈。
-    const pageCheckUpdate = document.getElementById("pageCheckUpdate");
-    const aboutUpdateResult = document.getElementById("aboutUpdateResult");
-
-    function setUpdateResult(message = "", tone = "info") {
-        aboutUpdateResult.hidden = !message;
-        aboutUpdateResult.dataset.tone = tone;
-        aboutUpdateResult.querySelector("span").textContent = message;
-    }
-
-    function setUpdateChecking(checking) {
-        pageCheckUpdate.disabled = checking;
-        pageCheckUpdate.classList.toggle("is-loading", checking);
-        pageCheckUpdate.innerHTML = `${icon("refresh")}${translateText("update.check")}`;
-    }
 
     // 创建任务区域提交原始输入，作品链接提取和下载规则均由后端处理。
     const urlInput = document.getElementById("urlInput");
@@ -1165,26 +1147,6 @@
             "unit.item")}</small>`;
     }
 
-    function renderNativeAbout(about) {
-        // 关于页的版本、发布类型和仓库信息均来自后端常量，避免在 HTML 中固化。
-        const version = String(about.version);
-        const release = String(about.release);
-        document.getElementById("aboutVersion").textContent = [version, release].filter(Boolean).join(" ");
-        document.getElementById("aboutAuthor").textContent = about.author;
-        document.getElementById("aboutLicense").textContent = about.license;
-        document.getElementById("aboutRepository").textContent = String(about.repository).replace(/^https?:\/\//, "");
-        aboutLinks = about.links || Object.create(null);
-        document.querySelectorAll("[data-about-key]").forEach((button) => {
-            const key = button.dataset.aboutKey;
-            const link = aboutLinks[key];
-            if (!link) return;
-            const value = button.querySelector("strong");
-            if (value) {
-                value.textContent = link.replace(/^https?:\/\//, "");
-            }
-        });
-    }
-
     function applyNativeState(state) {
         // 应用一次完整状态快照；仅在 revision 变化时重新查询下载记录数据库。
         renderNativeTaskLists(state.tasks, state.files);
@@ -1201,7 +1163,6 @@
         renderNativeLogs(state.logs);
         applyNativeSettings(state.settings);
         renderNativeMonitor(state.monitor);
-        renderNativeAbout(state.about);
     }
 
     async function refreshNativeState() {
@@ -1212,7 +1173,7 @@
             applyNativeState(await nativeApi.get_state());
             return true;
         } catch (error) {
-            showToast(translateText("update.failed"), "warning");
+            showToast(translateText("toast.refresh_failed"), "warning");
             return false;
         } finally {
             bridgeRefreshBusy = false;
@@ -1235,43 +1196,10 @@
     }
 
     function startStatePolling() {
-        // 用户确认免责声明后才开始轮询完整状态，避免未授权时触发下载器运行时逻辑。
+        // 连接桌面端后持续刷新任务和运行状态。
         if (stateRefreshTimer) return;
         stateRefreshTimer = window.setInterval(() => void refreshNativeState(), 500);
     }
-
-    function showDisclaimer() {
-        // 免责声明是启动前阻塞确认项，只能通过底部两个按钮继续或退出。
-        if (!disclaimerModal.open) disclaimerModal.showModal();
-        window.requestAnimationFrame(() => {
-            document.getElementById("acceptDisclaimer").focus({preventScroll: true});
-        });
-    }
-
-    document.getElementById("acceptDisclaimer").addEventListener("click", () => {
-        void (async () => {
-            try {
-                await nativeApi.accept_disclaimer();
-                disclaimerModal.close();
-                await refreshNativeState();
-                startStatePolling();
-            } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                showToast(message, "warning");
-            }
-        })();
-    });
-
-    document.getElementById("declineDisclaimer").addEventListener("click", () => {
-        void (async () => {
-            try {
-                await nativeApi.decline_disclaimer();
-            } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                showToast(message, "warning");
-            }
-        })();
-    });
 
     // 事件代理统一把桌面端操作转发到 PyWebView API。
     document.addEventListener("click", (event) => {
@@ -1288,15 +1216,6 @@
                 const cancelled = await nativeApi.cancel_task(taskId);
                 if (!cancelled) showToast(
                     translateText("toast.cannot_cancel"), "warning");
-            });
-            return;
-        }
-        if (button.dataset.aboutKey) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            void runNativeAction(async () => {
-                const opened = await nativeApi.open_url(aboutLinks[button.dataset.aboutKey]);
-                if (!opened) throw new Error(translateText("toast.browser_unavailable"));
             });
             return;
         }
@@ -1350,45 +1269,15 @@
                 applyNativeSettings(await nativeApi.get_settings());
                 showToast(translateText("settings.discarded"));
             });
-        } else if (id === "pageCheckUpdate") {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            if (pageCheckUpdate.disabled) return;
-            setUpdateChecking(true);
-            setUpdateResult(translateText("update.checking"), "info");
-            void (async () => {
-                try {
-                    const result = await nativeApi.check_update();
-                    if (result.status !== "ok") {
-                        setUpdateResult(result.message, "warning");
-                        return;
-                    }
-                    const updateAvailable = ["update_available", "stable_available", "development_current"].includes(
-                        result.kind);
-                    const tone = updateAvailable ? "warning" : "success";
-                    const title = result.title;
-                    setUpdateResult(`${title}: ${result.message}`, tone);
-                } catch (error) {
-                    const message = error?.message || String(error);
-                    setUpdateResult(`${translateText("update.failed")}: ${message}`, "error");
-                } finally {
-                    setUpdateChecking(false);
-                }
-            })();
         }
     }, true);
 
     function connectNativeBridge() {
-        // pywebviewready 触发后先加载语言包；未同意免责声明时不进入状态轮询。
+        // pywebviewready 触发后先加载语言包，再启动状态轮询。
         nativeApi = window.pywebview.api;
         void (async () => {
             await refreshUiTranslations();
             startupScreen.hidden = true;
-            const disclaimer = await nativeApi.get_disclaimer();
-            if (!disclaimer.accepted) {
-                showDisclaimer();
-                return;
-            }
             await refreshNativeState();
             startStatePolling();
         })().catch((error) => {
