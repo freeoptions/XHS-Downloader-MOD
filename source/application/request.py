@@ -1,12 +1,11 @@
 from datetime import datetime
 from html import unescape
 from re import DOTALL, IGNORECASE, search, sub
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlsplit
 
-from httpx import HTTPError
-from httpx import get
-from httpx import Response
+from curl_cffi.requests import get
+from curl_cffi.requests.exceptions import RequestException
 
 from ..module import ERROR, logging, retry, sleep_time
 from ..translation import _
@@ -24,11 +23,13 @@ class Html:
         self,
         manager: "Manager",
     ):
+        self.manager = manager
         self.print = manager.print
         self.retry = manager.retry
         self.client = manager.request_client
-        self.headers = manager.blank_headers
         self.timeout = manager.timeout
+        self.proxy = manager.proxy
+        self.impersonate = manager.impersonate
         self.last_response: dict[str, object] = {}
         self.failure_log_path = manager.root.joinpath(
             "Logs",
@@ -41,43 +42,36 @@ class Html:
         self,
         url: str,
         content=True,
-        cookie: str = None,
-        proxy: str = None,
+        cookie: str | None = None,
+        proxy: str | None = None,
         **kwargs,
     ) -> str:
         if not url.startswith("http"):
             url = f"https://{url}"
         default_cookie_used = bool(self.client.cookies) if not proxy else False
         cookie_used = bool(cookie) or default_cookie_used
-        headers = self.update_cookie(
-            cookie,
-        )
+        headers = self.manager.get_headers(url)
         try:
-            match bool(proxy):
-                case False:
-                    response = await self.__request_url_get(
-                        url,
-                        headers,
-                        **kwargs,
-                    )
-                    self._record_response(response, cookie_used)
-                    await sleep_time()
-                    response.raise_for_status()
-                    return response.text if content else str(response.url)
-                case True:
-                    response = await self.__request_url_get_proxy(
-                        url,
-                        headers,
-                        proxy,
-                        **kwargs,
-                    )
-                    self._record_response(response, cookie_used)
-                    await sleep_time()
-                    response.raise_for_status()
-                    return response.text if content else str(response.url)
-                case _:
-                    raise ValueError
-        except HTTPError as error:
+            if cookie:
+                response = self.__request_url_with_cookie(
+                    url,
+                    headers,
+                    cookie,
+                    proxy=proxy,
+                    **kwargs,
+                )
+            else:
+                response = await self.__request_url_get(
+                    url,
+                    headers,
+                    proxy=proxy,
+                    **kwargs,
+                )
+            self._record_response(response, cookie_used)
+            await sleep_time()
+            response.raise_for_status()
+            return response.text if content else str(response.url)
+        except RequestException as error:
             self._record_request_error(url, error, cookie_used)
             logging(
                 self.print,
@@ -89,7 +83,7 @@ class Html:
             )
             return ""
 
-    def _record_response(self, response: Response, cookie_used: bool = False) -> None:
+    def _record_response(self, response: Any, cookie_used: bool = False) -> None:
         text = response.text
         final_url = str(response.url)
         query = parse_qs(urlsplit(final_url).query)
@@ -111,7 +105,7 @@ class Html:
     def _record_request_error(
         self,
         url: str,
-        error: HTTPError,
+        error: Exception,
         cookie_used: bool,
     ) -> None:
         if response := getattr(error, "response", None):
@@ -210,7 +204,7 @@ class Html:
         return parsed.path or str(url).split("?", 1)[0]
 
     @staticmethod
-    def _error_summary(error: HTTPError) -> str:
+    def _error_summary(error: Exception) -> str:
         status = getattr(getattr(error, "response", None), "status_code", None)
         return (
             f"{type(error).__name__}，HTTP {status}"
@@ -231,38 +225,24 @@ class Html:
     def format_url(url: str) -> str:
         return bytes(url, "utf-8").decode("unicode_escape")
 
-    def update_cookie(
-        self,
-        cookie: str = None,
-    ) -> dict:
-        return self.headers | {"Cookie": cookie} if cookie else self.headers.copy()
-
-    async def __request_url_head(
-        self,
-        url: str,
-        headers: dict,
-        **kwargs,
-    ):
-        return await self.client.head(
-            url,
-            headers=headers,
+    def __request_url_with_cookie(
+            self,
+            url: str,
+            headers: dict,
+            cookie: str,
+            proxy: str | None = None,
             **kwargs,
-        )
-
-    async def __request_url_head_proxy(
-        self,
-        url: str,
-        headers: dict,
-        proxy: str,
-        **kwargs,
     ):
-        return await self.client.head(
+        timeout = kwargs.pop("timeout", self.timeout)
+        return get(
             url,
             headers=headers,
-            proxy=proxy,
-            follow_redirects=True,
+            cookies=self.manager.cookie_str_to_dict(cookie),
+            timeout=timeout,
             verify=False,
-            timeout=self.timeout,
+            allow_redirects=True,
+            proxy=self.proxy if proxy is None else proxy,
+            impersonate=self.impersonate,
             **kwargs,
         )
 
@@ -270,28 +250,12 @@ class Html:
         self,
         url: str,
         headers: dict,
+        proxy: str | None = None,
         **kwargs,
     ):
         return await self.client.get(
             url,
             headers=headers,
-            **kwargs,
-        )
-
-    async def __request_url_get_proxy(
-        self,
-        url: str,
-        headers: dict,
-        proxy: str,
-        **kwargs,
-    ):
-        timeout = kwargs.pop("timeout", self.timeout)
-        return get(
-            url,
-            headers=headers,
-            proxy=proxy,
-            follow_redirects=True,
-            verify=False,
-            timeout=timeout,
+            proxy=self.proxy if proxy is None else proxy,
             **kwargs,
         )

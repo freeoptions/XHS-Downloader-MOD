@@ -1,14 +1,12 @@
 // ==UserScript==
 // @name           XHS-Downloader
 // @namespace      xhs_downloader
-// @homepage       https://github.com/JoeanAmier/XHS-Downloader
-// @version        2.4.0
+// @version        2.4.3
 // @tag            小红书
 // @tag            RedNote
 // @tag            XiaoHongShu
 // @description    提取小红书作品/用户链接，下载小红书图文/视频作品文件
 // @description:en Extract RedNote works/user links, Download images/videos files
-// @author         JoeanAmier
 // @match          http*://www.xiaohongshu.com/explore*
 // @match          http*://www.xiaohongshu.com/discovery/item/*
 // @match          http*://www.xiaohongshu.com/user/profile/*
@@ -28,9 +26,6 @@
 // @grant          GM_unregisterMenuCommand
 // @license        GNU General Public License v3.0
 // @run-at         document-end
-// @updateURL      https://raw.githubusercontent.com/JoeanAmier/XHS-Downloader/master/static/XHS-Downloader.js
-// @downloadURL    https://raw.githubusercontent.com/JoeanAmier/XHS-Downloader/master/static/XHS-Downloader.js
-// @supportURL     https://github.com/JoeanAmier/XHS-Downloader/issues
 // @require        https://cdnjs.cloudflare.com/ajax/libs/jszip/3.9.1/jszip.min.js
 // ==/UserScript==
 
@@ -57,46 +52,13 @@
 5. 如果未开启自动滚动页面功能，用户需要手动滚动页面以便加载更多内容后再进行其他操作
 6. 支持作品文件打包下载；该功能默认开启，多个文件的作品将会以压缩包格式下载
 7. 向服务器推送下载任务时，文件格式、名称规则等设置以服务器配置文件中的设置为准
-8. 使用全局代理工具可能会导致脚本下载文件失败，如有异常，请尝试关闭代理工具，必要时向作者反馈
-9. XHS-Downloader 用户脚本仅实现可见即可得的数据采集功能，无任何收费功能和破解功能
-
-项目开源地址：https://github.com/JoeanAmier/XHS-Downloader
-`,
-            disclaimerText: `1. 使用者对本项目的使用由使用者自行决定，并自行承担风险。作者对使用者使用本项目所产生的任何损失、责任、或风险概不负责。
-2. 本项目的作者提供的代码和功能是基于现有知识和技术的开发成果。作者按现有技术水平努力确保代码的正确性和安全性，但不保证代码完全没有错误或缺陷。
-3. 本项目依赖的所有第三方库、插件或服务各自遵循其原始开源或商业许可，使用者需自行查阅并遵守相应协议，作者不对第三方组件的稳定性、安全性及合规性承担任何责任。
-4. 使用者在使用本项目时必须严格遵守 GNU General Public License v3.0 的要求，并在适当的地方注明使用了 GNU General Public License v3.0 的代码。
-5. 使用者在使用本项目的代码和功能时，必须自行研究相关法律法规，并确保其使用行为合法合规。任何因违反法律法规而导致的法律责任和风险，均由使用者自行承担。
-6. 使用者不得使用本工具从事任何侵犯知识产权的行为，包括但不限于未经授权下载、传播受版权保护的内容，开发者不参与、不支持、不认可任何非法内容的获取或分发。
-7. 本项目不对使用者涉及的数据收集、存储、传输等处理活动的合规性承担责任。使用者应自行遵守相关法律法规，确保处理行为合法正当；因违规操作导致的法律责任由使用者自行承担。
-8. 使用者在任何情况下均不得将本项目的作者、贡献者或其他相关方与使用者的使用行为联系起来，或要求其对使用者使用本项目所产生的任何损失或损害负责。
-9. 本项目的作者不会提供 XHS-Downloader 项目的付费版本，也不会提供与 XHS-Downloader 项目相关的任何商业服务。
-10. 基于本项目进行的任何二次开发、修改或编译的程序与原创作者无关，原创作者不承担与二次开发行为或其结果相关的任何责任，使用者应自行对因二次开发可能带来的各种情况负全部责任。
-11. 本项目不授予使用者任何专利许可；若使用本项目导致专利纠纷或侵权，使用者自行承担全部风险和责任。未经作者或权利人书面授权，不得使用本项目进行任何商业宣传、推广或再授权。
-12. 作者保留随时终止向任何违反本声明的使用者提供服务的权利，并可能要求其销毁已获取的代码及衍生作品。
-13. 作者保留在不另行通知的情况下更新本声明的权利，使用者持续使用即视为接受修订后的条款。
-
-在使用本项目的代码和功能之前，请您认真考虑并接受以上免责声明。如果您对上述声明有任何疑问或不同意，请不要使用本项目的代码和功能。如果您使用了本项目的代码和功能，则视为您已完全理解并接受上述免责声明，并自愿承担使用本项目的一切风险和后果。
+8. 使用全局代理工具可能会导致脚本下载文件失败，如有异常，请检查代理设置后重试
 `,
             readmeTitle: 'XHS-Downloader 脚本说明',
-            disclaimerTitle: 'XHS-Downloader 免责声明',
-            disclaimerConfirm: '我已知晓',
-            readmeMenuTitle: "阅读脚本说明和免责声明",
-            aboutText: `项目开源协议：GNU General Public License v3.0
-项目开源地址：https://github.com/JoeanAmier/XHS-Downloader
-
-如果 XHS-Downloader 对您有帮助，请考虑为它点个 Star ⭐，感谢您的支持！
-
-✨ 作者的其他开源项目：
-
-DouK-Downloader（抖音、DouYin、TikTok）：https://github.com/JoeanAmier/TikTokDownloader
-KS-Downloader（快手、KuaiShou）：https://github.com/JoeanAmier/KS-Downloader
-
-项目 Discord 社区：https://discord.com/invite/ZYtmgKud9Y
-`,
-            aboutTitle: '关于 XHS-Downloader',
+            readmeMenuTitle: "阅读脚本说明",
+            switchToLanguageMenuText: "切换到中文",
             errorTitle: '发生异常',
-            errorText: (text) => `${text}请向作者反馈！\n项目开源地址：https://github.com/JoeanAmier/XHS-Downloader`,
+            errorText: (text) => text,
             imageExtractError: "解析图文作品数据发生异常！",
             downloadLinkError: "处理下载链接发生异常！",
             downloadTips: "正在下载文件，请稍等...",
@@ -129,6 +91,30 @@ KS-Downloader（快手、KuaiShou）：https://github.com/JoeanAmier/KS-Download
             scriptServerSwitchDesc: '启用后，可以把作品下载任务推送至服务器',
             imageDownloadFormatLabel: '图片下载格式',
             imageDownloadFormatDesc: '图文作品文件下载格式',
+            fileNameFormatLabel: '作品文件名称格式',
+            fileNameFormatDesc: '点击可选字段添加，拖拽已选字段调整顺序',
+            fileNameSelectedLabel: '已选字段',
+            fileNameAvailableLabel: '可选字段',
+            fileNameRemoveTip: '移除字段',
+            fileNameKeyLabels: {
+                "收藏数量": "收藏数量",
+                "评论数量": "评论数量",
+                "分享数量": "分享数量",
+                "点赞数量": "点赞数量",
+                "作品标签": "作品标签",
+                "作品ID": "作品ID",
+                "作品标题": "作品标题",
+                "作品描述": "作品描述",
+                "作品类型": "作品类型",
+                "发布时间": "发布时间",
+                "更新时间": "更新时间",
+                "作者昵称": "作者昵称",
+                "作者ID": "作者ID",
+            },
+            downloadSettingsGroup: '下载设置',
+            extractSettingsGroup: '提取设置',
+            displaySettingsGroup: '菜单设置',
+            serverSettingsGroup: '服务器设置',
             saveSettingsButton: '保存设置',
             cancelSettingsButton: '放弃修改',
             selectAllButton: '全部选中',
@@ -159,12 +145,12 @@ KS-Downloader（快手、KuaiShou）：https://github.com/JoeanAmier/KS-Download
             extractAlbumNotesLinksDescription: '提取当前专辑的作品链接至剪贴板',
             modifyScriptSettingsText: '修改用户脚本设置',
             modifyScriptSettingsDescription: '修改用户脚本设置',
-            aboutXHSText: '关于 XHS-Downloader',
-            aboutXHSDescription: '查看 XHS-Downloader 更多信息',
             imageCheckboxTitle: '请选中需要下载的图片',
             scriptServerError: '脚本服务器连接出错，请检查网络连接或脚本服务器状态是否正常！',
             pushTaskError: '脚本服务器未连接，请检查网络连接或脚本服务器状态是否正常！',
             pushTaskSuccess: "已向服务器发送下载请求",
+            resetIconPositionMenuText: '重置图标位置',
+            resetIconPositionTip: '图标位置已重置',
             settingsTitle: '用户脚本设置',
             scriptInternalError: '脚本内部发生错误',
         }, 'EN': {
@@ -186,46 +172,13 @@ Notes:
 5. If auto-scroll is disabled, users must manually scroll the page to load more content before performing extractions.
 6. Supports batch downloading (ZIP format); this feature is enabled by default. Notes with multiple files will be downloaded as a compressed package.
 7. When pushing tasks to a server, settings such as file format and naming rules are determined by the server's configuration file.
-8. Using global proxy tools may cause download failures. If issues occur, try disabling the proxy and provide feedback to the author if necessary.
-9. The XHS-Downloader userscript only provides "what you see is what you get" data collection; it contains no paid features or decryption/cracking functions.
-
-Open Source: https://github.com/JoeanAmier/XHS-Downloader
-`,
-            disclaimerText: `1. The use of this project is at the user's own discretion and risk. The author is not responsible for any loss, liability, or risk arising from its use.
-2. The code and functions provided are based on existing knowledge and technology. While efforts are made to ensure correctness and security, the author does not guarantee that the code is entirely error-free.
-3. All third-party libraries, plugins, or services relied upon by this project follow their own original open-source or commercial licenses. Users must consult and comply with those agreements.
-4. Users must strictly adhere to the GNU General Public License v3.0 requirements and credit the use of GPL v3.0 code where appropriate.
-5. Users must research relevant laws and regulations to ensure their use of this project is legal and compliant. Any legal liability arising from violations is borne solely by the user.
-6. Users must not use this tool for any acts that infringe on intellectual property rights, including but not limited to unauthorized downloading or distribution of copyrighted content.
-7. This project assumes no responsibility for the compliance of data collection, storage, or transmission activities performed by the user.
-8. Under no circumstances shall the author or contributors be held liable for any damages or losses related to the user's actions.
-9. The author will not provide a paid version of XHS-Downloader, nor any commercial services related to the project.
-10. Any secondary development, modification, or compilation of this program is unrelated to the original author. The user is solely responsible for any consequences of such actions.
-11. This project does not grant any patent licenses. The user assumes all risks regarding patent disputes. Commercial promotion or sub-licensing without written authorization is prohibited.
-12. The author reserves the right to terminate service to any user violating this disclaimer and may request the destruction of obtained code.
-13. The author reserves the right to update this disclaimer without notice. Continued use constitutes acceptance of the revised terms.
-
-Before using this project, please carefully consider and accept the above disclaimer. If you have any doubts or disagree, do not use the code or functions. Use of the project implies full understanding and acceptance of these terms.
+8. Using global proxy tools may cause download failures. If issues occur, check the proxy settings and try again.
 `,
             readmeTitle: 'XHS-Downloader Instructions',
-            disclaimerTitle: 'XHS-Downloader Disclaimer',
-            disclaimerConfirm: 'I acknowledge',
-            readmeMenuTitle: "Read Instructions and Disclaimer",
-            aboutText: `License: GNU General Public License v3.0
-GitHub: https://github.com/JoeanAmier/XHS-Downloader
-
-If XHS-Downloader helps you, please consider giving it a Star ⭐. Thanks for your support!
-
-✨ Other Projects by the Author:
-
-DouK-Downloader (DouYin, TikTok): https://github.com/JoeanAmier/TikTokDownloader
-KS-Downloader (KuaiShou): https://github.com/JoeanAmier/KS-Downloader
-
-Discord Community: https://discord.com/invite/ZYtmgKud9Y
-`,
-            aboutTitle: 'About XHS-Downloader',
+            readmeMenuTitle: "Read Script Instructions",
+            switchToLanguageMenuText: "Switch to English",
             errorTitle: 'Exception Occurred',
-            errorText: (text) => `${text} Please report this to the author!\nGitHub: https://github.com/JoeanAmier/XHS-Downloader`,
+            errorText: (text) => text,
             imageExtractError: "Error parsing image note data!",
             downloadLinkError: "Error processing download links!",
             downloadTips: "Downloading file, please wait...",
@@ -258,6 +211,30 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             scriptServerSwitchDesc: 'When enabled, download tasks can be pushed to the server',
             imageDownloadFormatLabel: 'Image Download Format',
             imageDownloadFormatDesc: 'Preferred file format for downloading images',
+            fileNameFormatLabel: 'Note File Name Format',
+            fileNameFormatDesc: 'Click available fields to add them. Drag selected fields to reorder.',
+            fileNameSelectedLabel: 'Selected Fields',
+            fileNameAvailableLabel: 'Available Fields',
+            fileNameRemoveTip: 'Remove field',
+            fileNameKeyLabels: {
+                "收藏数量": "Favorite Count",
+                "评论数量": "Comment Count",
+                "分享数量": "Share Count",
+                "点赞数量": "Like Count",
+                "作品标签": "Note Tags",
+                "作品ID": "Note ID",
+                "作品标题": "Note Title",
+                "作品描述": "Note Desc",
+                "作品类型": "Note Type",
+                "发布时间": "Publish Time",
+                "更新时间": "Update Time",
+                "作者昵称": "Nickname",
+                "作者ID": "Author ID",
+            },
+            downloadSettingsGroup: 'Download Settings',
+            extractSettingsGroup: 'Extraction Settings',
+            displaySettingsGroup: 'Menu Settings',
+            serverSettingsGroup: 'Server Settings',
             saveSettingsButton: 'Save Settings',
             cancelSettingsButton: 'Discard Changes',
             selectAllButton: 'Select All',
@@ -288,12 +265,12 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             extractAlbumNotesLinksDescription: 'Extract note links from the current album',
             modifyScriptSettingsText: 'Modify Script Settings',
             modifyScriptSettingsDescription: '',
-            aboutXHSText: 'About XHS-Downloader',
-            aboutXHSDescription: '',
             imageCheckboxTitle: 'Please select images to download',
             scriptServerError: 'Server connection error. Please check your network or server status!',
             pushTaskError: 'Server not connected. Please check your network or server status!',
             pushTaskSuccess: "Download request sent to server successfully",
+            resetIconPositionMenuText: 'Reset icon position',
+            resetIconPositionTip: 'Icon position reset',
             settingsTitle: 'Script Settings',
             scriptInternalError: 'An internal error occurred in the script',
         },
@@ -310,9 +287,54 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     const iconBase64 = "data:image/png;base64,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";
 
     const defaultsWebSocketURL = "ws://127.0.0.1:5558";
+    const NAME_KEYS = [
+        "收藏数量",
+        "评论数量",
+        "分享数量",
+        "点赞数量",
+        "作品标签",
+        "作品ID",
+        "作品标题",
+        "作品描述",
+        "作品类型",
+        "发布时间",
+        "更新时间",
+        "作者昵称",
+        "作者ID",
+    ];
+    const defaultFileNameFormatKeys = ["发布时间", "作者昵称", "作品标题"];
+    const fileNameInvalidCharPattern = /[<>:"/\\|?*\x00-\x1F\x7F]/g;
+    const fileNameBlankPattern = /\s+/g;
+    const fileNameTrailingDotBlankPattern = /[. ]+$/g;
+    const fileNameTopicMarkerPattern = /\[话题]#/g;
+    const reservedFileNamePattern = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
+    const fileNameDescriptionMaxLength = 64;
+    const fileNameMaxLength = 128;
+
+    // 解析文件名格式字段。
+    const parseFileNameFormat = (value) => {
+        const keys = Array.isArray(value) ? value : `${value || ""}`.trim().split(/\s+/).filter(Boolean);
+        const validKeys = [];
+        if (keys.length === 0) {
+            return [...defaultFileNameFormatKeys];
+        }
+        for (const key of keys) {
+            if (!NAME_KEYS.includes(key)) {
+                return [...defaultFileNameFormatKeys];
+            }
+            if (!validKeys.includes(key)) {
+                validKeys.push(key);
+            }
+        }
+        return validKeys;
+    };
+
+    // 获取文件名字段显示名称。
+    const getFileNameKeyLabel = (key) => t.fileNameKeyLabels[key] || key;
+
+    const storedFileNameFormatKeys = parseFileNameFormat(GM_getValue("fileNameFormat", defaultFileNameFormatKeys));
 
     let config = {
-        disclaimer: GM_getValue("disclaimer", false),
         packageDownloadFiles: GM_getValue("packageDownloadFiles", true),
         autoScrollSwitch: GM_getValue("autoScrollSwitch", false),
         maxScrollCount: GM_getValue("maxScrollCount", 50),
@@ -322,7 +344,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         imageDownloadFormat: GM_getValue("imageDownloadFormat", "jpeg"),
         scriptServerURL: GM_getValue("scriptServerURL", defaultsWebSocketURL),
         scriptServerSwitch: GM_getValue("scriptServerSwitch", false),
-        fileNameFormat: undefined,
+        fileNameFormatKeys: storedFileNameFormatKeys,
         icon: {
             type: 'image', // 可选: image/svg/font
             image: {
@@ -344,35 +366,53 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         await showTextModal({
                                 title: t.readmeTitle, text: t.instructionsText, mode: 'info', closeText: t.closeButton
                             });
-        if (!config.disclaimer) {
-            showTextModal({
-                              title: t.disclaimerTitle,
-                              text: t.disclaimerText,
-                              mode: 'confirm',
-                              confirmText: t.disclaimerConfirm,
-                              closeText: t.closeButton
-                          }).then(answer => {
-                GM_setValue("disclaimer", answer);
-                config.disclaimer = answer;
-            });
-        }
     };
 
-    if (!config.disclaimer) {
+    if (!GM_getValue("instructionsShown", false)) {
+        GM_setValue("instructionsShown", true);
         readme().then();
     }
 
-    console.info("用户接受 XHS-Downloader 免责声明", config.disclaimer)
+    let registeredMenuCommandIds = [];
 
-    GM_registerMenuCommand(t.readmeMenuTitle, function () {
-        readme().then();
-    });
+    const unregisterMenuCommands = () => {
+        if (typeof GM_unregisterMenuCommand !== 'function') {
+            registeredMenuCommandIds = [];
+            return;
+        }
+        registeredMenuCommandIds.forEach(id => {
+            if (id !== undefined) {
+                GM_unregisterMenuCommand(id);
+            }
+        });
+        registeredMenuCommandIds = [];
+    };
 
-    GM_registerMenuCommand("切换语言/Switch language", function () {
-        lang = lang === "CN" ? "EN" : "CN";
-        GM_setValue("language", lang);
-        t = i18n[lang];
-    });
+    const registerMenuCommands = () => {
+        unregisterMenuCommands();
+        const menuCommands = [{
+            label: t.readmeMenuTitle,
+            action: () => readme().then(),
+        }, {
+            label: t.resetIconPositionMenuText,
+            action: () => resetIconPosition(),
+        }, {
+            label: lang === "CN" ? i18n.EN.switchToLanguageMenuText : i18n.CN.switchToLanguageMenuText,
+            action: () => {
+                lang = lang === "CN" ? "EN" : "CN";
+                GM_setValue("language", lang);
+                t = i18n[lang];
+                if (isMenuVisible) {
+                    updateMenuContent();
+                    positionMenu();
+                }
+                setTimeout(registerMenuCommands, 0);
+            },
+        }];
+        registeredMenuCommandIds = menuCommands.map(item => GM_registerMenuCommand(item.label, item.action));
+    };
+
+    registerMenuCommands();
 
     const updatePackageDownloadFiles = (value) => {
         config.packageDownloadFiles = value;
@@ -429,16 +469,11 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         GM_setValue("imageDownloadFormat", config.imageDownloadFormat);
     }
 
+    // 更新文件名格式配置。
     const updateFileNameFormat = (value) => {
-        config.fileNameFormat = value;
-        GM_setValue("fileNameFormat", config.fileNameFormat);
+        config.fileNameFormatKeys = parseFileNameFormat(value);
+        GM_setValue("fileNameFormat", config.fileNameFormatKeys);
     };
-
-    const about = () => {
-        showTextModal({
-                          title: t.aboutTitle, text: t.aboutText, mode: 'info', closeText: t.closeButton
-                      }).then();
-    }
 
     const abnormal = (text) => {
         showTextModal({
@@ -524,7 +559,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
                                })
                 } else {
                     console.error("提取图片预览链接失败", item)
-                    break
+                    return [];
                 }
             }
             return items;
@@ -535,7 +570,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     };
 
     const download = async (urls, note, server = false,) => {
-        const name = extractName();
+        const name = extractName(note);
         if (server) {
             let data = {data: note, index: null,};
             if (note.type === "normal") {
@@ -543,6 +578,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
                 if (items.length === 0) {
                     console.error("解析图文作品数据失败", note)
                     abnormal(t.imageExtractError)
+                    return;
                 } else if (urls.length > 1 && config.imageCheckboxSwitch) {
                     data.index = await showImageSelectionModal(items, name, server,);
                 }
@@ -588,26 +624,39 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         }
     };
 
+    // 提取作品详情数据。
     const extractNoteInfo = () => {
-        const data = unsafeWindow.__INITIAL_STATE__?.noteData?.data?.noteData;
+        const initialState = unsafeWindow.__INITIAL_STATE__;
+        const data = initialState?.noteData?.data?.noteData;
         if (data) return data;
-        const regex = /\/explore\/([^?]+)/;
-        const match = currentUrl.match(regex);
-        if (match) {
-            return unsafeWindow.__INITIAL_STATE__.note.noteDetailMap[match[1]].note;
-        } else {
-            console.error("从链接提取作品 ID 失败", currentUrl,);
+        const noteId = extractCurrentNoteId();
+        const noteDetailMap = initialState?.note?.noteDetailMap;
+        const noteDetailItems = Object.values(noteDetailMap || {});
+        const note = (noteId && noteDetailMap?.[noteId]?.note) || noteDetailItems[noteDetailItems.length - 1]?.note;
+        if (note) {
+            return note;
         }
+        console.error("从页面提取作品数据失败", currentUrl,);
     };
 
     const extractDownloadLinks = async (server = false) => {
         if (currentUrl.includes(`https://www.${currentSite}.com/explore/`) || currentUrl.includes(
             `https://www.${currentSite}.com/discovery/item/`)) {
-            let note = extractNoteInfo();
-            if (note) {
-                await exploreDeal(note, server,);
-            } else {
-                abnormal(t.extractError);
+            const downloadKey = extractCurrentNoteId();
+            if (activeDownloadKeys.has(downloadKey)) {
+                showToast(t.downloadTips);
+                return;
+            }
+            activeDownloadKeys.add(downloadKey);
+            try {
+                let note = extractNoteInfo();
+                if (note) {
+                    await exploreDeal(note, server,);
+                } else {
+                    abnormal(t.extractError);
+                }
+            } finally {
+                activeDownloadKeys.delete(downloadKey);
             }
         }
     };
@@ -708,21 +757,182 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         }
     };
 
+    // 截断过长字符串。
     const truncateString = (str, maxLength) => {
-        if (str.length > maxLength) {
-            const halfLength = Math.floor(maxLength / 2) - 1; // 减去 1 留出省略号的空间
-            return str.slice(0, halfLength) + '...' + str.slice(-halfLength);
+        const characters = Array.from(`${str ?? ""}`);
+        if (characters.length > maxLength) {
+            const availableLength = maxLength - 3;
+            const startLength = Math.floor(availableLength / 2);
+            const endLength = availableLength - startLength;
+            return characters.slice(0, startLength).join("") + '...' + characters.slice(-endLength).join("");
         }
-        return str;
+        return characters.join("");
     };
 
-    const extractName = () => {
-        let name = document.title.replace(/ - 小红书$/, "").replace(/ - rednote$/, "")
-                           .replace(/[^\u4e00-\u9fa5a-zA-Z0-9 ~!@#$%&()_\-+=\[\];"',.！（）【】：“”，。《》？]/g, "");
+    // 清理文件名文本。
+    const filterFileName = (value) => {
+        const name = `${value ?? ""}`
+            .replace(fileNameInvalidCharPattern, " ")
+            .replace(fileNameBlankPattern, " ")
+            .trim()
+            .replace(fileNameTrailingDotBlankPattern, "");
+        if (name === "." || name === "..") {
+            return "";
+        }
+        return reservedFileNamePattern.test(name) ? "" : name;
+    };
+
+    // 按路径读取对象值。
+    const safeExtract = (data, path, defaultValue = "") => {
+        if (!data) {
+            return defaultValue;
+        }
+        const value = path.split(".").reduce((current, key) => current?.[key], data);
+        return value ?? defaultValue;
+    };
+
+    // 提取当前作品 ID。
+    const extractCurrentNoteId = () => {
+        const match = currentUrl?.match(/\/(?:explore|discovery\/item)\/([^/?#]+)/);
+        return match ? match[1] : "";
+    };
+
+    const activeDownloadKeys = new Set();
+
+    // 提取作品数据内的作品 ID。
+    const getNoteId = (note) => {
+        return safeExtract(note, "noteId") || safeExtract(note, "id") || extractCurrentNoteId();
+    };
+
+    // 格式化命名时间。
+    const formatNameTime = (value) => {
+        const timestamp = Number(value);
+        if (!Number.isFinite(timestamp) || timestamp <= 0) {
+            return "未知";
+        }
+        const date = new Date(timestamp > 1000000000000 ? timestamp : timestamp * 1000);
+        if (Number.isNaN(date.getTime())) {
+            return "未知";
+        }
+        const pad = number => `${number}`.padStart(2, "0");
+        return [
+            `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+            `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+        ].join("_");
+    };
+
+    // 判断作品类型名称。
+    const classifyNoteType = (note) => {
+        const type = safeExtract(note, "type");
+        const imageList = safeExtract(note, "imageList", []);
+        if (!["video", "normal"].includes(type) || !Array.isArray(imageList) || imageList.length === 0) {
+            return "未知";
+        }
+        if (type === "video") {
+            return imageList.length === 1 ? "视频" : "图集";
+        }
+        return "图文";
+    };
+
+    // 文件名字段值提取器。
+    const fileNameValueExtractors = {
+        "收藏数量": note => safeExtract(note, "interactInfo.collectedCount", "0"),
+        "评论数量": note => safeExtract(note, "interactInfo.commentCount", "0"),
+        "分享数量": note => safeExtract(note, "interactInfo.shareCount", "0"),
+        "点赞数量": note => safeExtract(note, "interactInfo.likedCount", "0"),
+        "作品标签": note => {
+            const tags = safeExtract(note, "tagList", []);
+            return Array.isArray(tags) ? tags.map(item => safeExtract(item, "name")).filter(Boolean).join(" ") : tags;
+        },
+        "作品ID": note => getNoteId(note),
+        "作品标题": note => safeExtract(note, "title") || safeExtract(note, "displayTitle") || getNoteId(note),
+        "作品描述": note => safeExtract(note, "desc"),
+        "作品类型": note => classifyNoteType(note),
+        "发布时间": note => formatNameTime(safeExtract(note, "time")),
+        "更新时间": note => formatNameTime(safeExtract(note, "lastUpdateTime")),
+        "作者昵称": note => safeExtract(note, "user.nickname") || safeExtract(note, "user.nickName"),
+        "作者ID": note => safeExtract(note, "user.userId"),
+    };
+
+    // 提取单个文件名字段值。
+    const getFileNameKeyValue = (note, key) => {
+        const extractor = fileNameValueExtractors[key];
+        return extractor ? extractor(note) : "";
+    };
+
+    // 获取文件名字段回退值。
+    const getFallbackFileNameValue = (values, note, key) => {
+        return filterFileName(values[key]) || filterFileName(getFileNameKeyValue(note, key));
+    };
+
+    // 作品字段值设置入口
+    const setFileNameKeyValues = (values, note, keys = NAME_KEYS) => {
+        if (!note) {
+            return;
+        }
+        keys.forEach(key => {
+            values[key] = getFileNameKeyValue(note, key);
+        });
+    };
+
+    // 创建文件名字段值集合。
+    const getFileNameKeyValues = (note, keys = NAME_KEYS) => {
+        const values = {};
+        keys.forEach(key => {
+            values[key] = "";
+        });
+        setFileNameKeyValues(values, note, keys);
+        return values;
+    };
+
+    // 格式化单个文件名字段。
+    const formatFileNameValue = (key, value, values, note) => {
+        if (Array.isArray(value)) {
+            value = value.join(" ");
+        }
+        value = `${value ?? ""}`.trim();
+        if (key === "发布时间" || key === "更新时间") {
+            value = value.replace(/:/g, ".");
+        } else if (key === "作者昵称") {
+            return filterFileName(value) || getFallbackFileNameValue(values, note, "作者ID");
+        } else if (key === "作品标题") {
+            return filterFileName(value) || getFallbackFileNameValue(values, note, "作品ID");
+        } else if (key === "作品描述") {
+            const filteredValue = filterFileName(value.replace(fileNameTopicMarkerPattern, ""));
+            return filteredValue ? truncateString(filteredValue, fileNameDescriptionMaxLength) :
+                   getFallbackFileNameValue(values, note, "作品ID");
+        }
+        if (!value) {
+            return "";
+        }
+        return filterFileName(value);
+    };
+
+    // 生成自定义下载文件名。
+    const extractCustomName = (note) => {
+        const values = getFileNameKeyValues(note, config.fileNameFormatKeys);
+        const name = config.fileNameFormatKeys
+                           .map(key => formatFileNameValue(key, values[key], values, note))
+                           .filter(Boolean)
+                           .join("_");
+        if (name) {
+            return truncateString(name, fileNameMaxLength);
+        }
+        const fallback = getFallbackFileNameValue(values, note, "作品ID");
+        return truncateString(fallback, fileNameMaxLength);
+    };
+
+    // 从页面标题提取文件名。
+    const extractDocumentName = () => {
+        let name = filterFileName(document.title.replace(/ - 小红书$/, "").replace(/ - rednote$/, ""));
         name = truncateString(name, 64,);
-        let match = currentUrl.match(/\/([0-9a-z]+?)\?/);
-        let id = match ? match[1] : null;
+        let id = extractCurrentNoteId() || null;
         return name === "" ? id : name
+    };
+
+    // 获取下载文件名。
+    const extractName = (note) => {
+        return extractCustomName(note) || extractDocumentName();
     };
 
     const downloadVideo = async (url, name) => {
@@ -958,7 +1168,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     .optimized-scroll-modal {
         background: white;
         border-radius: 16px;
-        width: 380px; /* 缩小窗口宽度 */
+        width: 860px;
         max-width: 95vw;
         max-height: 95vh;
         box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
@@ -983,6 +1193,33 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         flex: 1;
         padding: 1rem;
         overflow-y: auto;
+    }
+    .scrollable-modal-body {
+        overflow-y: scroll;
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+        scrollbar-color: #bdbdbd #f5f5f5;
+    }
+    .scrollable-modal-body::-webkit-scrollbar {
+        width: 10px;
+    }
+    .scrollable-modal-body::-webkit-scrollbar-track {
+        background: #f5f5f5;
+        border-radius: 8px;
+    }
+    .scrollable-modal-body::-webkit-scrollbar-thumb {
+        background: #bdbdbd;
+        border: 2px solid #f5f5f5;
+        border-radius: 8px;
+    }
+    .scrollable-modal-body::-webkit-scrollbar-thumb:hover {
+        background: #9e9e9e;
+    }
+    .settings-body {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px 20px;
+        align-items: start;
     }
     .modal-footer {
         padding: 1rem;
@@ -1016,6 +1253,38 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         transition: background 0.2s;
     }
     .setting-item:hover { background: #f0f0f0; }
+    .settings-body .setting-item {
+        margin: 0;
+        min-width: 0;
+    }
+    .settings-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+    }
+    .settings-group.wide {
+        grid-column: 1 / -1;
+    }
+    .settings-group-title {
+        color: #212121;
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1.4;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #eee;
+    }
+    .settings-group-content {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+    }
+    .settings-group.wide .settings-group-content {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+    }
     .setting-item label {
         display: flex;
         justify-content: space-between;
@@ -1119,6 +1388,91 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         margin-top: 4px;
         line-height: 1.4;
         text-align: left;
+    }
+    .file-name-format-item {
+        grid-column: 1 / -1;
+    }
+    .file-name-format-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .file-name-format-group-title {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 6px;
+    }
+    .file-name-card-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: 42px;
+        padding: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        background: #fff;
+    }
+    .file-name-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 5px 8px;
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        background: #fafafa;
+        color: #333;
+        font-size: 0.85rem;
+        line-height: 1.2;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    .file-name-card.available:not(.disabled):hover {
+        background: #f0f7ff;
+        border-color: #90caf9;
+    }
+    .file-name-card.selected {
+        background: #eaf4ff;
+        border-color: #90caf9;
+        cursor: grab;
+    }
+    .file-name-card.selected:active {
+        cursor: grabbing;
+    }
+    .file-name-card.dragging {
+        opacity: 0.5;
+    }
+    .file-name-card.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+    .file-name-card-remove {
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: #666;
+        font-size: 16px;
+        line-height: 14px;
+        cursor: pointer;
+    }
+    .file-name-card-remove:hover {
+        color: #d32f2f;
+    }
+    @media (max-width: 760px) {
+        .optimized-scroll-modal {
+            width: 95vw;
+        }
+        .settings-body {
+            grid-template-columns: 1fr;
+        }
+        .settings-group.wide .settings-group-content {
+            grid-template-columns: 1fr;
+        }
     }
 
     /* 通用动画：统一定义一次 */
@@ -1305,15 +1659,172 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         item.className = 'setting-item';
         item.style.opacity = disabled ? 0.6 : 1;
 
+        const title = document.createElement('div');
+        const titleText = document.createElement('span');
+        titleText.style.cssText = 'font-size: 1rem; font-weight: 500; color: #333;';
+        titleText.textContent = label;
+        title.appendChild(titleText);
+
+        const desc = document.createElement('div');
+        desc.className = 'setting-description';
+        desc.textContent = description;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'text-input';
+        input.placeholder = placeholder ?? "";
+        input.value = value ?? "";
+        input.disabled = disabled;
+
+        item.append(title, desc, input);
+
+        return item;
+    };
+
+    // 创建文件名称格式编辑器
+    const createFileNameFormatEditor = ({label, description, value}) => {
+        const item = document.createElement('div');
+        item.className = 'setting-item file-name-format-item';
+
         item.innerHTML = `
             <div>
                 <span style="font-size: 1rem; font-weight: 500; color: #333;">${label}</span>
             </div>
             <div class="setting-description">${description}</div>
-            <input type="text" class="text-input" placeholder="${placeholder}" value="${value}" ${disabled ?
-                                                                                                  'disabled' : ''}>
+            <div class="file-name-format-editor">
+                <div>
+                    <div class="file-name-format-group-title">${t.fileNameSelectedLabel}</div>
+                    <div class="file-name-card-list file-name-selected-fields"></div>
+                </div>
+                <div>
+                    <div class="file-name-format-group-title">${t.fileNameAvailableLabel}</div>
+                    <div class="file-name-card-list file-name-available-fields"></div>
+                </div>
+            </div>
         `;
 
+        const selectedContainer = item.querySelector('.file-name-selected-fields');
+        const availableContainer = item.querySelector('.file-name-available-fields');
+        let selectedKeys = parseFileNameFormat(value);
+        let draggedKey = null;
+
+        item.getFileNameFormatKeys = () => [...selectedKeys];
+
+        const removeKey = (key) => {
+            if (selectedKeys.length <= 1) {
+                return;
+            }
+            selectedKeys = selectedKeys.filter(item => item !== key);
+            renderCards();
+        };
+
+        const addKey = (key) => {
+            if (!selectedKeys.includes(key)) {
+                selectedKeys.push(key);
+                renderCards();
+            }
+        };
+
+        const moveKey = (targetKey) => {
+            if (!draggedKey || draggedKey === targetKey) {
+                return;
+            }
+            const from = selectedKeys.indexOf(draggedKey);
+            const to = selectedKeys.indexOf(targetKey);
+            if (from === -1 || to === -1) {
+                return;
+            }
+            const [key] = selectedKeys.splice(from, 1);
+            selectedKeys.splice(to, 0, key);
+            renderCards();
+        };
+
+        const createFieldCard = (key, selected) => {
+            const card = document.createElement('div');
+            card.className = `file-name-card ${selected ? 'selected' : 'available'}`;
+            card.dataset.key = key;
+
+            const text = document.createElement('span');
+            text.textContent = getFileNameKeyLabel(key);
+            card.appendChild(text);
+
+            if (selected) {
+                card.draggable = true;
+                card.addEventListener('dragstart', (e) => {
+                    draggedKey = key;
+                    card.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', key);
+                });
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    moveKey(key);
+                    draggedKey = null;
+                });
+                card.addEventListener('dragend', () => {
+                    draggedKey = null;
+                    card.classList.remove('dragging');
+                });
+
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'file-name-card-remove';
+                removeButton.title = t.fileNameRemoveTip;
+                removeButton.textContent = '×';
+                removeButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeKey(key);
+                });
+                card.appendChild(removeButton);
+            } else if (selectedKeys.includes(key)) {
+                card.classList.add('disabled');
+            } else {
+                card.addEventListener('click', () => addKey(key));
+            }
+
+            return card;
+        };
+
+        const renderSelectedCards = () => {
+            selectedContainer.innerHTML = '';
+            selectedKeys.forEach(key => {
+                selectedContainer.appendChild(createFieldCard(key, true));
+            });
+        };
+
+        const renderAvailableCards = () => {
+            availableContainer.innerHTML = '';
+            NAME_KEYS.forEach(key => {
+                availableContainer.appendChild(createFieldCard(key, false));
+            });
+        };
+
+        function renderCards() {
+            renderSelectedCards();
+            renderAvailableCards();
+        }
+
+        selectedContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        selectedContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const target = e.target instanceof Element ? e.target : e.target.parentElement;
+            if (draggedKey && target && !target.closest('.file-name-card')) {
+                selectedKeys = selectedKeys.filter(key => key !== draggedKey);
+                selectedKeys.push(draggedKey);
+                renderCards();
+                draggedKey = null;
+            }
+        });
+
+        renderCards();
         return item;
     };
 
@@ -1372,7 +1883,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
 
         // 创建内容区域
         const body = document.createElement('div');
-        body.className = 'modal-body';
+        body.className = 'modal-body settings-body scrollable-modal-body';
 
         // 自动滚动开关
         const autoScroll = createSwitchItem({
@@ -1438,12 +1949,11 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
                                                              .toUpperCase(),
                                                      });
 
-        // const nameFormat = createTextInput({
-        //                                        label: '文件名称格式',
-        //                                        description: '设置文件的名称格式（例如：{date}-{title}）。',
-        //                                        placeholder: '{date}-{title}',
-        //                                        value: GM_getValue("fileNameFormat",)
-        //                                    });
+        const nameFormat = createFileNameFormatEditor({
+                                                          label: t.fileNameFormatLabel,
+                                                          description: t.fileNameFormatDesc,
+                                                          value: config.fileNameFormatKeys,
+                                                      });
 
         // 绑定自动滚动开关控制次数输入
         autoScroll.querySelector('input').addEventListener('change', (e) => {
@@ -1455,16 +1965,31 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             scriptServerURL.querySelector('.text-input').style.opacity = e.target.checked ? 1 : 0.6;
         });
 
+        const createSettingsGroup = (title, items, wide = false) => {
+            const group = document.createElement('div');
+            group.className = `settings-group${wide ? ' wide' : ''}`;
+
+            const groupTitle = document.createElement('div');
+            groupTitle.className = 'settings-group-title';
+            groupTitle.textContent = title;
+            group.appendChild(groupTitle);
+
+            const groupContent = document.createElement('div');
+            groupContent.className = 'settings-group-content';
+            items.forEach(item => groupContent.appendChild(item));
+            group.appendChild(groupContent);
+            return group;
+        };
+
         // 组合内容
-        body.appendChild(filePack);
-        body.appendChild(autoScroll);
-        body.appendChild(scrollCount);
-        body.appendChild(linkCheckboxSwitch);
-        body.appendChild(imageCheckboxSwitch);
-        body.appendChild(imageDownloadFormat);
-        body.appendChild(keepMenuVisible);
-        body.appendChild(scriptServerURL);
-        body.appendChild(scriptServerSwitch);
+        body.appendChild(createSettingsGroup(
+            t.downloadSettingsGroup,
+            [filePack, imageCheckboxSwitch, imageDownloadFormat, nameFormat],
+            true
+        ));
+        body.appendChild(createSettingsGroup(t.extractSettingsGroup, [autoScroll, scrollCount, linkCheckboxSwitch]));
+        body.appendChild(createSettingsGroup(t.displaySettingsGroup, [keepMenuVisible]));
+        body.appendChild(createSettingsGroup(t.serverSettingsGroup, [scriptServerSwitch, scriptServerURL]));
 
         // 创建底部按钮
         const footer = document.createElement('div');
@@ -1496,7 +2021,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             updateScriptServerURL(scriptServerURL.querySelector('.text-input').value.trim() || defaultsWebSocketURL);
             updateScriptServerSwitch(scriptServerSwitch.querySelector('input').checked);
             updateImageDownloadFormat(imageDownloadFormat.querySelector('select').value.trim() || "jpeg");
-            // updateFileNameFormat(nameFormat.querySelector('.text-input').value.trim() || null);
+            updateFileNameFormat(nameFormat.getFileNameFormatKeys());
             closeSettingsModal();
         });
 
@@ -1618,7 +2143,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
 
             // 创建内容区域
             const body = document.createElement('div');
-            body.className = 'modal-body';
+            body.className = 'modal-body scrollable-modal-body';
 
             // 创建图片网格
             const imageGrid = document.createElement('div');
@@ -1872,7 +2397,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
 
             // 内容
             const body = document.createElement('div');
-            body.className = 'modal-body';
+            body.className = 'modal-body scrollable-modal-body';
 
             const container = document.createElement('div');
             container.className = 'list-container';
@@ -2009,6 +2534,56 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         });
     }
 
+    // 悬浮图标位置常量
+    const iconPositionStorageKey = "floatingIconPosition";
+    const iconViewportMargin = 8;
+    const menuViewportMargin = 8;
+    const menuGap = 12;
+    const iconDragThreshold = 4;
+
+    // 悬浮图标位置工具
+    const clamp = (value, min, max) => {
+        const safeMax = Math.max(min, max);
+        return Math.min(Math.max(value, min), safeMax);
+    };
+
+    const getIconSize = () => config.icon[config.icon.type].size;
+
+    const clampIconPosition = (left, top) => {
+        const size = getIconSize();
+        return {
+            left: clamp(left, iconViewportMargin, window.innerWidth - size - iconViewportMargin),
+            top: clamp(top, iconViewportMargin, window.innerHeight - size - iconViewportMargin),
+        };
+    };
+
+    const applyIconPosition = (target, position) => {
+        target.style.left = `${position.left}px`;
+        target.style.top = `${position.top}px`;
+        target.style.right = 'auto';
+        target.style.bottom = 'auto';
+    };
+
+    const applyDefaultIconPosition = (target) => {
+        target.style.left = 'auto';
+        target.style.top = config.position.top;
+        target.style.right = config.position.right;
+        target.style.bottom = 'auto';
+    };
+
+    const getCurrentIconPosition = (target) => {
+        const rect = target.getBoundingClientRect();
+        return clampIconPosition(rect.left, rect.top);
+    };
+
+    const readStoredIconPosition = () => {
+        const position = GM_getValue(iconPositionStorageKey, null);
+        if (!position || typeof position.left !== 'number' || typeof position.top !== 'number') {
+            return null;
+        }
+        return clampIconPosition(position.left, position.top);
+    };
+
     // 创建主图标
     const createIcon = () => {
         const icon = document.createElement('div');
@@ -2020,13 +2595,16 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             height: ${config.icon[config.icon.type].size}px;
             background: white;
             border-radius: ${config.icon.image.borderRadius || '8px'};
-            cursor: pointer;
+            cursor: grab;
             z-index: 9999;
             box-shadow: 0 3px 5px rgba(0,0,0,0.12), 0 3px 5px rgba(0,0,0,0.24);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all ${config.animation.duration}s ${config.animation.easing};
+            transition: transform ${config.animation.duration}s ${config.animation.easing}, box-shadow ${config.animation.duration}s ${config.animation.easing};
+            touch-action: none;
+            user-select: none;
+            -webkit-user-drag: none;
         `;
 
         icon.style.backgroundImage = `url(${config.icon.image.url})`;
@@ -2039,8 +2617,8 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     const menu = document.createElement('div');
     menu.style = `
         position: fixed;
-        top: calc(${config.position.top} + ${config.icon[config.icon.type].size}px + 1rem);
-        right: 0;
+        top: 0;
+        left: 0;
         width: 255px;
         max-width: calc(100vw - 1rem);
         background: white;
@@ -2049,10 +2627,10 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         overflow: hidden;
         display: none;
         z-index: 9998;
-        transform-origin: top right;
+        transform-origin: top center;
         transition: all ${config.animation.duration}s ${config.animation.easing};
         opacity: 0;
-        transform: translateY(-10px) scaleY(0.95);
+        transform: translateY(var(--menu-hidden-translate, 10px)) scaleY(0.95);
         will-change: transform, opacity;
     `;
 
@@ -2064,6 +2642,95 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         overscroll-behavior: contain;
     `;
     menu.appendChild(menuContent);
+
+    let icon;
+    let hideTimeout;
+    let hideAnimationTimeout;
+    let isMenuVisible = false;
+    let isDraggingIcon = false;
+    let menuHiddenTranslate = '10px';
+
+    const getMenuMaxHeight = (availableSpace) => {
+        const viewportMaxHeight = Math.max(0, window.innerHeight - menuViewportMargin * 2);
+        const minimumVisibleHeight = Math.min(120, viewportMaxHeight);
+        return Math.min(400, viewportMaxHeight, Math.max(availableSpace, minimumVisibleHeight));
+    };
+
+    const positionMenu = () => {
+        if (!icon) {
+            return;
+        }
+        const iconRect = icon.getBoundingClientRect();
+        const iconCenterX = iconRect.left + iconRect.width / 2;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        menuContent.style.maxHeight = '400px';
+        const naturalHeight = menu.offsetHeight;
+        const availableBelow = viewportHeight - iconRect.bottom - menuGap - menuViewportMargin;
+        const availableAbove = iconRect.top - menuGap - menuViewportMargin;
+        const openAbove = availableBelow < naturalHeight && availableAbove > availableBelow;
+        const availableHeight = openAbove ? availableAbove : availableBelow;
+        menuContent.style.maxHeight = `${getMenuMaxHeight(availableHeight)}px`;
+
+        const menuWidth = menu.offsetWidth;
+        const menuHeight = menu.offsetHeight;
+        const left = clamp(
+            iconCenterX - menuWidth / 2,
+            menuViewportMargin,
+            viewportWidth - menuWidth - menuViewportMargin
+        );
+        const top = clamp(
+            openAbove ? iconRect.top - menuGap - menuHeight : iconRect.bottom + menuGap,
+            menuViewportMargin,
+            viewportHeight - menuHeight - menuViewportMargin
+        );
+        const originX = clamp(iconCenterX - left, 16, menuWidth - 16);
+
+        menuHiddenTranslate = openAbove ? '-10px' : '10px';
+        menu.style.setProperty('--menu-hidden-translate', menuHiddenTranslate);
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+        menu.style.right = 'auto';
+        menu.style.bottom = 'auto';
+        menu.style.transformOrigin = `${originX}px ${openAbove ? '100%' : '0'}`;
+    };
+
+    const saveIconPosition = () => {
+        const position = getCurrentIconPosition(icon);
+        applyIconPosition(icon, position);
+        GM_setValue(iconPositionStorageKey, position);
+    };
+
+    const syncFloatingControlsToViewport = () => {
+        const position = getCurrentIconPosition(icon);
+        applyIconPosition(icon, position);
+        if (isMenuVisible) {
+            positionMenu();
+        }
+    };
+
+    const initializeIconPosition = () => {
+        applyDefaultIconPosition(icon);
+        const defaultPosition = getCurrentIconPosition(icon);
+        const position = readStoredIconPosition() || defaultPosition;
+        applyIconPosition(icon, position);
+        GM_setValue(iconPositionStorageKey, position);
+    };
+
+    function resetIconPosition() {
+        if (!icon) {
+            return;
+        }
+        applyDefaultIconPosition(icon);
+        const position = getCurrentIconPosition(icon);
+        applyIconPosition(icon, position);
+        GM_setValue(iconPositionStorageKey, position);
+        if (isMenuVisible) {
+            positionMenu();
+        }
+        showToast(t.resetIconPositionTip, 2000);
+    }
 
     // 初始化样式
     style = document.createElement('style');
@@ -2132,7 +2799,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(10px) scaleY(0.95);
+                transform: translateY(var(--menu-hidden-translate, 10px)) scaleY(0.95);
             }
             to {
                 opacity: 1;
@@ -2147,7 +2814,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             }
             to {
                 opacity: 0;
-                transform: translateY(10px) scaleY(0.95);
+                transform: translateY(var(--menu-hidden-translate, 10px)) scaleY(0.95);
             }
         }
 
@@ -2254,24 +2921,49 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     };
 
     // 隐藏菜单
-    let hideTimeout;
-
-    const hideMenu = () => {
-        if (config.keepMenuVisible) {
+    const hideMenu = (force = false) => {
+        clearTimeout(hideTimeout);
+        clearTimeout(hideAnimationTimeout);
+        if (config.keepMenuVisible && !force) {
             return;
         }
-        hideTimeout = setTimeout(() => {
+        const runHide = () => {
             menu.classList.remove('menu-enter');
+            if (force) {
+                menu.classList.remove('menu-exit');
+                menu.style.display = 'none';
+                menu.style.opacity = 0;
+                menu.style.transform = `translateY(${menuHiddenTranslate}) scaleY(0.95)`;
+                isMenuVisible = false;
+                return;
+            }
             menu.classList.add('menu-exit');
             menu.style.opacity = 0;
-            menu.style.transform = 'translateY(10px) scaleY(0.95)';
+            menu.style.transform = `translateY(${menuHiddenTranslate}) scaleY(0.95)`;
 
-            setTimeout(() => {
+            hideAnimationTimeout = setTimeout(() => {
                 menu.style.display = 'none';
                 menu.classList.remove('menu-exit');
                 isMenuVisible = false;
             }, config.animation.duration * 1000);
-        }, 100);
+        };
+        if (force) {
+            runHide();
+        } else {
+            hideTimeout = setTimeout(runHide, 100);
+        }
+    };
+
+    const keepMenuOpen = () => {
+        clearTimeout(hideTimeout);
+        clearTimeout(hideAnimationTimeout);
+        if (!isMenuVisible) {
+            return;
+        }
+        menu.classList.remove('menu-exit');
+        menu.style.display = 'block';
+        menu.style.opacity = 1;
+        menu.style.transform = 'translateY(0) scaleY(1)';
     };
 
     let currentUrl, currentSite = null;
@@ -2285,11 +2977,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         currentUrl = window.location.href;
         const menuItems = [];
 
-        if (!config.disclaimer) {
-            menuItems.push({
-                               text: 'README', icon: ' 📄 ', action: readme, description: t.readmeMenuTitle
-                           },);
-        } else if (currentUrl === `https://www.${currentSite}.com/explore` || currentUrl.includes(
+        if (currentUrl === `https://www.${currentSite}.com/explore` || currentUrl.includes(
             `https://www.${currentSite}.com/explore?`)) {
             menuItems.push({
                                text: t.extractRecommendLinksText,
@@ -2355,12 +3043,15 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         menuItems.push({
                            separator: true
                        }, {
+            text: t.readmeMenuTitle,
+            icon: ' 📄 ',
+            action: readme,
+            description: t.readmeMenuTitle
+                       }, {
             text: t.modifyScriptSettingsText,
             icon: ' ⚙️ ',
             action: showSettings,
             description: t.modifyScriptSettingsDescription
-                       }, {
-                           text: t.aboutXHSText, icon: ' 📒 ', action: about, description: t.aboutXHSDescription
                        });
 
         // 创建菜单项
@@ -2401,7 +3092,6 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
 
     // URL监测相关
     let lastUrl = window.location.href;
-    let isMenuVisible = false;
     let currentSiteMatch = lastUrl.match(currentSitePattern);
     if (currentSiteMatch) {
         currentSite = currentSiteMatch[1];
@@ -2411,22 +3101,111 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
 
     // 显示菜单
     const showMenu = () => {
+        if (isDraggingIcon) {
+            return;
+        }
         clearTimeout(hideTimeout);
+        clearTimeout(hideAnimationTimeout);
+        updateMenuContent();
         menu.style.display = 'block';
+        menu.style.visibility = 'hidden';
+        menu.classList.remove('menu-enter', 'menu-exit');
+        menu.style.opacity = 0;
+        positionMenu();
+        menu.style.transform = `translateY(${menuHiddenTranslate}) scaleY(0.95)`;
         void menu.offsetHeight; // 触发重绘
+        menu.style.visibility = 'visible';
         menu.classList.add('menu-enter');
         menu.style.opacity = 1;
         menu.style.transform = 'translateY(0) scaleY(1)';
-        updateMenuContent();
         isMenuVisible = true;
     };
 
+    const setupIconDragging = () => {
+        let dragState = null;
+
+        const stopDrag = (event) => {
+            if (!dragState || event.pointerId !== dragState.pointerId) {
+                return;
+            }
+            const wasDragging = dragState.dragging;
+            dragState = null;
+            window.removeEventListener('pointermove', moveDrag);
+            window.removeEventListener('pointerup', stopDrag);
+            window.removeEventListener('pointercancel', stopDrag);
+            try {
+                icon.releasePointerCapture(event.pointerId);
+            } catch (_) {
+            }
+            icon.style.transition = '';
+            icon.style.cursor = 'grab';
+            isDraggingIcon = false;
+            if (wasDragging) {
+                saveIconPosition();
+                requestAnimationFrame(() => {
+                    if (config.keepMenuVisible || icon.matches(':hover')) {
+                        showMenu();
+                    }
+                });
+            }
+        };
+
+        const moveDrag = (event) => {
+            if (!dragState || event.pointerId !== dragState.pointerId) {
+                return;
+            }
+            const deltaX = event.clientX - dragState.startClientX;
+            const deltaY = event.clientY - dragState.startClientY;
+
+            if (!dragState.dragging) {
+                if (Math.hypot(deltaX, deltaY) < iconDragThreshold) {
+                    return;
+                }
+                dragState.dragging = true;
+                isDraggingIcon = true;
+                hideMenu(true);
+                icon.style.transition = 'none';
+                icon.style.cursor = 'grabbing';
+            }
+
+            event.preventDefault();
+            applyIconPosition(icon, clampIconPosition(
+                dragState.startLeft + deltaX,
+                dragState.startTop + deltaY
+            ));
+        };
+
+        icon.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0) {
+                return;
+            }
+            const rect = icon.getBoundingClientRect();
+            dragState = {
+                pointerId: event.pointerId,
+                startClientX: event.clientX,
+                startClientY: event.clientY,
+                startLeft: rect.left,
+                startTop: rect.top,
+                dragging: false,
+            };
+            try {
+                icon.setPointerCapture(event.pointerId);
+            } catch (_) {
+            }
+            window.addEventListener('pointermove', moveDrag, {passive: false});
+            window.addEventListener('pointerup', stopDrag);
+            window.addEventListener('pointercancel', stopDrag);
+        });
+    };
+
     // 事件监听
-    const icon = createIcon();
+    icon = createIcon();
+    setupIconDragging();
     icon.addEventListener('mouseenter', showMenu);
-    icon.addEventListener('mouseleave', hideMenu);
-    menu.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
-    menu.addEventListener('mouseleave', hideMenu);
+    icon.addEventListener('mouseleave', () => hideMenu());
+    menu.addEventListener('mouseenter', keepMenuOpen);
+    menu.addEventListener('mouseleave', () => hideMenu());
+    window.addEventListener('resize', syncFloatingControlsToViewport);
 
     // URL变化监听
     const setupUrlListener = () => {
@@ -2438,6 +3217,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
                     currentSite = currentSiteMatch[1];
                     if (isMenuVisible) {
                         updateMenuContent();
+                        positionMenu();
                     }
                 } else {
                     currentSite = null;
@@ -2453,6 +3233,8 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     document.body.appendChild(icon);
     document.body.appendChild(menu);
     document.head.appendChild(style);
+    initializeIconPosition();
+    syncFloatingControlsToViewport();
     setupUrlListener();
 
     if (config.keepMenuVisible) {
