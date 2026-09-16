@@ -1,4 +1,4 @@
-from asyncio import Semaphore, gather
+from asyncio import Semaphore, gather, wait_for
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
@@ -70,6 +70,7 @@ class Download:
         self.chunk = manager.chunk
         self.client: "AsyncSession" = manager.download_client
         self.headers = manager.blank_headers
+        self.timeout = manager.timeout
         self.retry = manager.retry
         self.folder_mode = manager.folder_mode
         self.video_format = "mp4"
@@ -367,7 +368,15 @@ class Download:
                     report("downloading", total)
                     buffer = bytearray()
                     async with open(temp, "ab") as f:
-                        async for chunk in response.aiter_content(self.chunk):
+                        content = response.aiter_content(self.chunk)
+                        while True:
+                            try:
+                                chunk = await wait_for(
+                                    anext(content),
+                                    timeout=self.timeout,
+                                )
+                            except StopAsyncIteration:
+                                break
                             buffer.extend(chunk)
                             if len(buffer) >= self.WRITE_BUFFER_SIZE:
                                 await f.write(bytes(buffer))
@@ -392,6 +401,20 @@ class Download:
                 report("completed", total)
                 logging(self.print, _("文件 {0} 下载成功").format(real.name))
                 return _DownloadOutcome(True)
+            except TimeoutError as error:
+                report("failed")
+                logging(
+                    self.print,
+                    _("网络异常，{0} 下载超时（{1} 秒）").format(
+                        name,
+                        self.timeout,
+                    ),
+                    ERROR,
+                )
+                return _DownloadOutcome(
+                    False,
+                    self.__is_png_conversion_failure(url, format_, error),
+                )
             except RequestException as error:
                 report("failed")
                 logging(
@@ -425,6 +448,11 @@ class Download:
         if format_.lower() != "png":
             return False
         link = urlparse(url)
+        if isinstance(error, TimeoutError):
+            return (
+                link.hostname == "ci.xiaohongshu.com"
+                and "imageview2/format/png" in link.query.lower()
+            )
         status_code = getattr(getattr(error, "response", None), "status_code", None)
         return (
             link.hostname == "ci.xiaohongshu.com"

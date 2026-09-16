@@ -1,4 +1,6 @@
+import asyncio
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import AsyncMock, Mock, call, patch
@@ -13,6 +15,37 @@ PNG_URL = (
     "?imageView2/format/png"
 )
 AUTO_URL = "https://sns-img-bd.xhscdn.com/test/token"
+
+
+class _StalledContent:
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        await asyncio.sleep(1)
+        return b"never-reached"
+
+
+class _StreamResponse:
+    status_code = 200
+    headers = {"content-length": "1"}
+
+    def raise_for_status(self):
+        return None
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_):
+        return None
+
+    def aiter_content(self, _):
+        return _StalledContent()
+
+
+class _StreamClient:
+    def stream(self, *_args, **_kwargs):
+        return _StreamResponse()
 
 
 class PngAutoFallbackTest(IsolatedAsyncioTestCase):
@@ -99,6 +132,34 @@ class PngAutoFallbackTest(IsolatedAsyncioTestCase):
         self.assertFalse(result)
         self.assertTrue(result.png_conversion_failed)
         self.assertEqual(once.await_count, 3)
+
+    async def test_stalled_png_stream_times_out_and_can_fall_back(self):
+        with TemporaryDirectory() as directory:
+            downloader = object.__new__(Download)
+            downloader.temp = Path(directory)
+            downloader.manager = SimpleNamespace(delete=Mock())
+            downloader.print = Mock()
+            downloader.headers = {}
+            downloader.timeout = 0.01
+            downloader.chunk = 1
+            downloader.retry = 0
+            downloader.client = _StreamClient()
+            progress = []
+
+            with patch("source.application.download.logging"):
+                result = await downloader._Download__download_once(
+                    PNG_URL,
+                    Path(directory),
+                    "note_1",
+                    "png",
+                    0,
+                    progress.append,
+                    "task",
+                )
+
+        self.assertFalse(result)
+        self.assertTrue(result.png_conversion_failed)
+        self.assertEqual(progress[-1]["state"], "failed")
 
 
 class PngConversionFailureDetectionTest(TestCase):
