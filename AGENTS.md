@@ -1,6 +1,6 @@
 ﻿# XHS-Downloader-MOD 项目专属规则
 
-通用规则见：`E:\@imFile-Download\AI-Useful-Prompt\通用开发工作规则.md`。本文件以下内容是本项目的专属规则，保留其优先级。
+本项目继承 Codex 已加载的全局 `AGENTS.md`（本机：`C:\Users\freez\.codex\AGENTS.md`）；以下保留项目专属规则。
 
 本文件仅适用于 `XHS-Downloader-MOD` 项目，并覆盖通用规则中“只交付单个 EXE”的要求。其他项目继续遵循各自规则或通用的单 EXE 构建规则。
 
