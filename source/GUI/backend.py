@@ -5,9 +5,11 @@ import sys
 from asyncio import CancelledError
 from collections import deque
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from re import fullmatch
+from random import uniform
 from subprocess import DEVNULL, Popen
 from threading import Event, Thread
 from typing import Any
@@ -19,6 +21,7 @@ from pyperclip import copy, paste
 
 from ..application import XHS
 from ..module import Settings, VOLUME
+from ..module.deferred_retry import DeferredRetryState, defer_retries
 from ..translation import _
 from .ui_strings import (
     NAME_FORMAT_FIELDS,
@@ -50,6 +53,9 @@ class TaskState:
     script_data: dict[str, Any] | None = None
     index: list | tuple | None = None
     display_text: str | None = None
+    waiting_retry: bool = False
+    can_retry: bool = False
+    retry_state: DeferredRetryState = field(default_factory=DeferredRetryState)
 
     def as_dict(self) -> dict[str, Any]:
         """转换为可通过 PyWebView 序列化给 JavaScript 的普通字典。"""
@@ -60,6 +66,7 @@ class TaskState:
             "display_text": self.display_text or self.url,
             "source": self.source,
             "state": self.state,
+            "waiting_retry": self.waiting_retry,
         }
 
 
@@ -202,6 +209,9 @@ class GuiBackend:
             with suppress(CancelledError):
                 await self.worker
             self.worker = None
+        if self.xhs:
+            for task in self.tasks.values():
+                await self.xhs.downloader.finalize_deferred(task.retry_state)
         await self._close_xhs()
 
     def call(self, coroutine):
@@ -291,16 +301,62 @@ class GuiBackend:
         return task.as_dict()
 
     async def _worker_loop(self) -> None:
-        """串行消费任务队列；任务进入 processing 后不再允许取消。"""
+        """先消费普通任务，再按 20～40 秒间隔重试一次；新增任务始终优先。"""
 
+        deferred = deque()
         while True:
-            task_id = await self.task_queue.get()
+            queued = True
+            if deferred and self.task_queue.empty():
+                task = self.tasks.get(deferred[0])
+                if not task or task.state != "pending":
+                    deferred.popleft()
+                    if task:
+                        await self.xhs.downloader.finalize_deferred(task.retry_state)
+                    continue
+                delay = uniform(20, 40)
+                self.add_log(
+                    f"普通任务已处理完，{len(deferred)} 个失败帖子等待重试；"
+                    f"将在 {delay:.1f} 秒后重试。新增任务将优先处理。",
+                    "warning",
+                )
+                try:
+                    task_id = await asyncio.wait_for(self.task_queue.get(), delay)
+                except TimeoutError:
+                    task_id = deferred.popleft()
+                    queued = False
+            else:
+                task_id = await self.task_queue.get()
             try:
                 task = self.tasks.get(task_id)
                 if task and task.state != "cancelled":
-                    await self._process_task(task)
+                    if not queued:
+                        task.waiting_retry = False
+                        task.retry_state.retrying = True
+                        self.add_log(f"开始队尾重试帖子：{task.display_text or task_display_id(task.url)}")
+                    with defer_retries(task.retry_state):
+                        await self._process_task(task)
+                    if (
+                        queued and task.state == "failed" and task.can_retry
+                        and self.xhs.manager.retry > 0
+                    ):
+                        task.state = "pending"
+                        task.waiting_retry = True
+                        deferred.append(task_id)
+                        self.add_log("当前帖子处理失败，已移到队尾，继续处理其他任务。", "warning")
+                    else:
+                        await self.xhs.downloader.finalize_deferred(task.retry_state)
+            except CancelledError:
+                # 程序退出或任务取消前也归档已经完成的部分文件。
+                if task:
+                    await self.xhs.downloader.finalize_deferred(task.retry_state)
+                for pending_id in deferred:
+                    pending_task = self.tasks.get(pending_id)
+                    if pending_task:
+                        await self.xhs.downloader.finalize_deferred(pending_task.retry_state)
+                raise
             finally:
-                self.task_queue.task_done()
+                if queued:
+                    self.task_queue.task_done()
 
     async def _process_task(self, task: TaskState) -> None:
         """执行单个作品的跳过判断、提取和下载，并更新最终状态。"""
@@ -308,6 +364,9 @@ class GuiBackend:
         if task.state != "pending":
             return
         task.state = "processing"
+        task.can_retry = False
+        task.retry_state.download_failed = False
+        task.retry_state.retryable = False
         try:
             # extract() 通过回调返回汇总统计，GUI 不根据 URL 推断任务结果。
             statistics: dict[str, Any] = {}
@@ -339,6 +398,12 @@ class GuiBackend:
                 task.state = "skipped"
             else:
                 task.state = "failed"
+                task.can_retry = (
+                    task.retry_state.retryable
+                    if task.retry_state.download_failed
+                    else not self.xhs._is_not_found_failure()
+                    and getattr(self.xhs.html, "request_retryable", True)
+                )
             if self.xhs.manager.download_record:
                 self.history_revision += 1
         except CancelledError:
@@ -365,8 +430,8 @@ class GuiBackend:
         )
         item.update(
             {
-                "completed_bytes": event.get("completed_bytes", 0),
-                "total_bytes": event.get("total_bytes"),
+                "completed_bytes": event.get("completed_bytes", item.get("completed_bytes", 0)),
+                "total_bytes": event.get("total_bytes", item.get("total_bytes")),
                 "state": event.get("state", "downloading"),
             }
         )
@@ -385,6 +450,7 @@ class GuiBackend:
         if not task or task.state != "pending":
             return False
         task.state = "cancelled"
+        await self.xhs.downloader.finalize_deferred(task.retry_state)
         return True
 
     async def clear_finished(self) -> int:
@@ -452,6 +518,46 @@ class GuiBackend:
         """在线程池中读取系统剪贴板，避免阻塞 asyncio 事件循环。"""
 
         return await asyncio.to_thread(paste)
+
+    async def copy_task_links(self, state: str) -> int:
+        """将指定任务状态下的作品链接复制到系统剪贴板。"""
+
+        if state not in {
+            "all",
+            "processing",
+            "pending",
+            "success",
+            "failed",
+            "skipped",
+        }:
+            raise ValueError(f"Unsupported task filter: {state}")
+        links = [
+            task.url
+            for task in self.tasks.values()
+            if task.url and (state == "all" or task.state == state)
+        ]
+        await asyncio.to_thread(copy, "\n".join(links))
+        return len(links)
+
+    async def copy_failed_ids(self) -> int:
+        """只复制最终失败任务的作品 ID，兼容用户脚本任务并去重。"""
+
+        ids = []
+        for task in self.tasks.values():
+            if task.state != "failed":
+                continue
+            note_id = (
+                (task.script_data or {}).get("noteId")
+                or task_display_id(task.url)
+                or task.display_text
+                or ""
+            )
+            if fullmatch(r"[0-9a-fA-F]{24}", str(note_id)):
+                ids.append(str(note_id).lower())
+        ids = list(dict.fromkeys(ids))
+        if ids:
+            await asyncio.to_thread(copy, "\n".join(ids))
+        return len(ids)
 
     async def get_history_page(self, query: str = "", page: int = 1) -> dict[str, Any]:
         """从数据库查询指定页的作品 ID；搜索在数据库端执行而非前端过滤。"""
@@ -539,6 +645,7 @@ class GuiBackend:
                     "chunk": manager.chunk,
                     "timeout": manager.timeout,
                     "max_retry": manager.retry,
+                    "avg_delay": manager.avg_delay,
                     "image_format": manager.image_format,
                     "video_preference": manager.video_preference,
                     "proxy": manager.proxy,
@@ -566,7 +673,7 @@ class GuiBackend:
     async def save_settings(self, data: dict[str, Any]) -> dict[str, Any]:
         """保存配置并重建下载器，使 Manager 处理后的新配置立即生效。"""
 
-        if any(task.state == "processing" for task in self.tasks.values()):
+        if any(task.state == "processing" or task.waiting_retry for task in self.tasks.values()):
             return {"ok": False, "error": _("请等待正在处理的任务结束后再保存配置")}
         if self.monitor_task and not self.monitor_task.done():
             return {"ok": False, "error": _("请先关闭剪贴板监听再保存配置")}
@@ -654,6 +761,16 @@ class GuiApi:
         """读取剪贴板文本。"""
 
         return self._backend.call(self._backend.read_clipboard())
+
+    def copy_task_links(self, state: str) -> int:
+        """将指定任务状态下的作品链接复制到剪贴板。"""
+
+        return self._backend.call(self._backend.copy_task_links(state))
+
+    def copy_failed_ids(self) -> int:
+        """复制当前队列最终失败的帖子 ID。"""
+
+        return self._backend.call(self._backend.copy_failed_ids())
 
     def browse_directory(self, directory: str = "") -> str:
         """打开系统目录选择器并返回用户选中的路径。"""

@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 
 VERSION_MAJOR = 2
-VERSION_MINOR = 8
-VERSION_BETA = False
+VERSION_MINOR = 9
+VERSION_BETA = True
 __VERSION__ = f"{VERSION_MAJOR}.{VERSION_MINOR}.{'beta' if VERSION_BETA else 'stable'}"
 _SOURCE_ROOT = Path(__file__).resolve().parent.parent.parent
 _COMPILED = globals().get("__compiled__")

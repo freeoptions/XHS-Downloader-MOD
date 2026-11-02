@@ -17,9 +17,9 @@ from types import SimpleNamespace
 from typing import Annotated, Awaitable, Callable
 from urllib.parse import urlparse
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
-from fastmcp import FastMCP
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import Field
 from pyperclip import copy, paste
 from rich import print
@@ -56,6 +56,8 @@ from ..module import (
     ScriptServer,
     logging,
 )
+from ..module.auth import generate_auth_token, verify_auth_token
+from ..module.deferred_retry import DEFERRED_RETRY
 from ..translation import _, switch_language
 from .download import Download
 from .explore import Explore
@@ -111,8 +113,8 @@ class Print:
 
 
 class XHS:
-    RETRY_INITIAL_DELAY_RANGE = (40.0, 70.0)
-    RETRY_ITEM_DELAY_RANGE = (7.0, 20.0)
+    RETRY_INITIAL_DELAY_RANGE = (20.0, 40.0)
+    RETRY_ITEM_DELAY_RANGE = (20.0, 40.0)
     RETRY_REQUEST_TIMEOUT = 20
     VERSION_MAJOR = VERSION_MAJOR
     VERSION_MINOR = VERSION_MINOR
@@ -151,6 +153,7 @@ class XHS:
         timeout=10,
         chunk=1024 * 1024 * 2,
         max_retry=5,
+        avg_delay: float | int = 6.0,
         record_data=True,
         image_format="PNG",
         image_download=True,
@@ -185,6 +188,7 @@ class XHS:
             proxy_download,
             timeout,
             max_retry,
+            avg_delay,
             record_data,
             image_format,
             image_download,
@@ -261,34 +265,46 @@ class XHS:
         )
         filename = self.__naming_rules(container)
         path = self.downloader.generate_path(nickname, filename)
-        if (u := container["下载地址"]) and download:
-            i = container["作品ID"]
-            result = await self.downloader.run(
-                u,
-                container["动图地址"],
-                index,
-                path,
-                filename,
-                container["作品类型"],
-                container["时间戳"],
-                container["封面地址"],
-                progress=progress_callback,
-                task_id=task_id,
-            )
-            if not result:
-                count.skip += 1
-            elif all(result):
-                count.success += 1
-                await self.__add_record(
-                    i,
+        deferred = DEFERRED_RETRY.get()
+        complete = False
+        attempted = bool(download and container["下载地址"])
+        if attempted and deferred is not None:
+            deferred.partial_outcomes[(path, filename)] = False
+        try:
+            if (u := container["下载地址"]) and download:
+                i = container["作品ID"]
+                result = await self.downloader.run(
+                    u,
+                    container["动图地址"],
+                    index,
+                    path,
+                    filename,
+                    container["作品类型"],
+                    container["时间戳"],
+                    container["封面地址"],
+                    progress=progress_callback,
+                    task_id=task_id,
                 )
-            else:
+                if not result:
+                    count.skip += 1
+                    complete = True  # 所有当前启用/指定的文件均已存在。
+                elif all(result):
+                    complete = True
+                    count.success += 1
+                    await self.__add_record(i)
+                else:
+                    count.fail += 1
+            elif not u:
+                self.logging(_("提取作品文件下载地址失败"), ERROR)
                 count.fail += 1
-        elif not u:
-            self.logging(_("提取作品文件下载地址失败"), ERROR)
-            count.fail += 1
-        await self.note_generator.save_note_info(container, path, filename)
-        await self.save_data(container)
+            await self.note_generator.save_note_info(container, path, filename)
+            await self.save_data(container)
+        finally:
+            if attempted:
+                if deferred is not None:
+                    deferred.partial_outcomes[(path, filename)] = complete
+                else:
+                    await self.downloader.finalize_partial(path, filename, complete)
 
     @data_cache
     async def save_data(
@@ -397,7 +413,9 @@ class XHS:
                 else:
                     retry_queue.append((position, current_url))
 
-        if retry_queue:
+        if retry_queue and DEFERRED_RETRY.get() is not None:
+            final_failed_urls.extend(url for _, url in retry_queue)
+        elif retry_queue:
             await self._retry_failed_reads(
                 retry_queue,
                 result,
@@ -932,6 +950,7 @@ class XHS:
         port=5556,
         log_level="info",
     ):
+        print(_("鉴权令牌: {}").format(generate_auth_token()))
         api = FastAPI(
             debug=self.VERSION_BETA,
             title="XHS-Downloader",
@@ -951,6 +970,8 @@ class XHS:
         self,
         server: FastAPI,
     ):
+        bearer = HTTPBearer(auto_error=False)
+
         @server.get(
             "/",
             summary=_("跳转至项目 GitHub 仓库"),
@@ -978,7 +999,13 @@ class XHS:
             tags=["API"],
             response_model=ExtractData,
         )
-        async def handle(extract: ExtractParams):
+        async def handle(
+            extract: ExtractParams,
+            credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+        ):
+            token = credentials.credentials if credentials else None
+            if not verify_auth_token(token):
+                raise HTTPException(status_code=403)
             data = None
             url = await self.extract_links(
                 extract.url,
@@ -1007,6 +1034,28 @@ class XHS:
         port=5556,
         log_level="INFO",
     ):
+        try:
+            from fastmcp import FastMCP
+            from fastmcp.server.auth import AccessToken, TokenVerifier
+        except ImportError:
+            print(
+                _(
+                    '未安装 fastmcp 模块，请运行 pip install "fastmcp>=4.1.0" 或 uv sync --no-dev --extra mcp 后重新运行！'
+                )
+            )
+            return
+
+        class _TokenVerifier(TokenVerifier):
+            async def verify_token(self, token: str) -> AccessToken | None:
+                if not verify_auth_token(token):
+                    return None
+                return AccessToken(
+                    token=token,
+                    client_id="XHS-Downloader",
+                    scopes=[],
+                )
+
+        print(_("鉴权令牌: {}").format(generate_auth_token()))
         mcp = FastMCP(
             "XHS-Downloader",
             instructions=dedent("""
@@ -1036,6 +1085,7 @@ class XHS:
                 - data：作品信息数据，不需要返回作品信息数据时固定为 None
                 """),
             version=__VERSION__,
+            auth=_TokenVerifier(),
         )
 
         @mcp.tool(

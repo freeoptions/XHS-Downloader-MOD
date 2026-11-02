@@ -55,6 +55,7 @@ class Index(Screen):
                 Button("复制日志", id="copy_log"),
                 Button(_("清空输入框"), id="reset"),
                 Button("复制失败链接", id="copy_failed"),
+                Button("复制失败帖子 ID", id="copy_failed_ids"),
             ),
         )
         yield RichLog(
@@ -130,6 +131,17 @@ class Index(Screen):
             "\n".join(self.failed_urls),
             f"已复制 {len(self.failed_urls)} 个失败链接",
         )
+
+    @on(Button.Pressed, "#copy_failed_ids")
+    def copy_failed_ids_button(self):
+        ids = list(dict.fromkeys(
+            self.xhs.extract_link_id(url) for url in self.failed_urls
+            if self.xhs.extract_link_id(url)
+        ))
+        if ids:
+            self._copy_to_clipboard("\n".join(ids), f"已复制 {len(ids)} 个失败帖子 ID")
+        else:
+            self.app.notify("暂无失败帖子 ID")
 
     @work(exclusive=True)
     async def deal(self):

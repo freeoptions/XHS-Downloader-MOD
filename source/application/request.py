@@ -46,6 +46,7 @@ class Html:
         proxy: str | None = None,
         **kwargs,
     ) -> str:
+        self.request_retryable = True
         if not url.startswith("http"):
             url = f"https://{url}"
         default_cookie_used = bool(self.client.cookies) if not proxy else False
@@ -68,10 +69,12 @@ class Html:
                     **kwargs,
                 )
             self._record_response(response, cookie_used)
-            await sleep_time()
+            await sleep_time(self.manager.avg_delay)
             response.raise_for_status()
             return response.text if content else str(response.url)
         except RequestException as error:
+            status = getattr(getattr(error, "response", None), "status_code", None)
+            self.request_retryable = status is None or status in {408, 429} or status >= 500
             self._record_request_error(url, error, cookie_used)
             logging(
                 self.print,
@@ -226,18 +229,18 @@ class Html:
         return bytes(url, "utf-8").decode("unicode_escape")
 
     def __request_url_with_cookie(
-            self,
-            url: str,
-            headers: dict,
-            cookie: str,
-            proxy: str | None = None,
-            **kwargs,
+        self,
+        url: str,
+        headers: dict,
+        cookie: str,
+        proxy: str | None = None,
+        **kwargs,
     ):
         timeout = kwargs.pop("timeout", self.timeout)
         return get(
             url,
             headers=headers,
-            cookies=self.manager.cookie_str_to_dict(cookie),
+            cookies=self.manager.cookie_str_to_cookies(cookie),
             timeout=timeout,
             verify=False,
             allow_redirects=True,

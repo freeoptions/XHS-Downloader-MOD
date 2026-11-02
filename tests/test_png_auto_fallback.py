@@ -107,7 +107,7 @@ class PngAutoFallbackTest(IsolatedAsyncioTestCase):
         self.assertFalse(result)
         retry.assert_awaited_once()
         downloader.manager.delete.assert_not_called()
-        log.assert_not_called()
+        log.assert_called_once()
 
     async def test_retry_keeps_the_png_conversion_failure_reason(self):
         downloader = self.create_downloader()
@@ -121,13 +121,14 @@ class PngAutoFallbackTest(IsolatedAsyncioTestCase):
         )
         downloader._Download__download_once = once
 
-        result = await downloader._Download__download_with_retry(
-            PNG_URL,
-            Path("D:/downloads"),
-            "note_1",
-            "png",
-            0,
-        )
+        with patch("source.application.download.sleep", new=AsyncMock()):
+            result = await downloader._Download__download_with_retry(
+                PNG_URL,
+                Path("D:/downloads"),
+                "note_1",
+                "png",
+                0,
+            )
 
         self.assertFalse(result)
         self.assertTrue(result.png_conversion_failed)

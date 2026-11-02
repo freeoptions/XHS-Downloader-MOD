@@ -1,16 +1,19 @@
-from asyncio import Semaphore, gather, wait_for
+from asyncio import CancelledError, Semaphore, gather, sleep, to_thread, wait_for
 from dataclasses import dataclass
 from pathlib import Path
+from random import uniform
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import urlparse
 
 from aiofiles import open
+from curl_cffi import CurlHttpVersion
 from curl_cffi.requests.exceptions import RequestException
 
 from ..expansion import CacheError
 
 from ..module import (
     ERROR,
+    INFO,
     FILE_SIGNATURES,
     FILE_SIGNATURES_LENGTH,
     MAX_WORKERS,
@@ -19,6 +22,8 @@ from ..module import (
     # sleep_time,
 )
 from ..translation import _
+from ..module.deferred_retry import DEFERRED_RETRY
+from ..module.partial_downloads import PartialDownloads
 
 if TYPE_CHECKING:
     from curl_cffi.requests import AsyncSession
@@ -32,6 +37,8 @@ __all__ = ["Download"]
 class _DownloadOutcome:
     success: bool
     png_conversion_failed: bool = False
+    retryable: bool = True
+    http2_failed: bool = False
 
     def __bool__(self) -> bool:
         return self.success
@@ -70,7 +77,7 @@ class Download:
         self.chunk = manager.chunk
         self.client: "AsyncSession" = manager.download_client
         self.headers = manager.blank_headers
-        self.timeout = manager.timeout
+        self.timeout = max(30, manager.timeout)
         self.retry = manager.retry
         self.folder_mode = manager.folder_mode
         self.video_format = "mp4"
@@ -139,8 +146,16 @@ class Download:
             )
             for url, name, format_ in tasks
         ]
-        tasks = await gather(*tasks)
-        return tasks
+        results = await gather(*tasks, return_exceptions=True)
+        for index, result in enumerate(results):
+            if isinstance(result, CancelledError):
+                raise result
+            if isinstance(result, BaseException):
+                logging(self.print, f"文件处理异常：{type(result).__name__}", ERROR)
+                results[index] = False
+                if deferred := DEFERRED_RETRY.get():
+                    deferred.download_failed = True
+        return results
 
     def generate_path(self, nickname: str, filename: str):
         if self.author_archive:
@@ -149,8 +164,26 @@ class Download:
         else:
             folder = self.folder
         path = self.manager.archive(folder, filename, self.folder_mode)
+        path = PartialDownloads(self.folder, self.folder_mode).prepare(path, filename)
         path.mkdir(exist_ok=True)
         return path
+
+    async def finalize_partial(self, path: Path, filename: str, complete: bool) -> None:
+        try:
+            target = await to_thread(
+                PartialDownloads(self.folder, self.folder_mode).finalize,
+                path, filename, complete,
+            )
+            if target != path:
+                logging(self.print, f"作品文件已归档到：{target}", WARNING if not complete else INFO)
+        except (OSError, ValueError) as error:
+            # 移动失败保留现存文件，不能让归档错误终止整个下载队列。
+            logging(self.print, f"作品文件归档失败，文件已保留：{type(error).__name__}", ERROR)
+
+    async def finalize_deferred(self, state) -> None:
+        for (path, filename), complete in list(state.partial_outcomes.items()):
+            await self.finalize_partial(path, filename, complete)
+        state.partial_outcomes.clear()
 
     def __ready_download_video(
         self,
@@ -267,9 +300,15 @@ class Download:
         )
         if result:
             return True
+        deferred = DEFERRED_RETRY.get()
+        if deferred is not None and not deferred.retrying:
+            # 第一轮只记录失败，不在当前帖子内重试或切换 PNG 地址。
+            return False
         if not result.png_conversion_failed:
+            logging(self.print, f"{name}：下载失败，已结束重试", ERROR)
             return False
         if not (auto_url := self.__generate_auto_url(url)):
+            logging(self.print, f"{name}：下载失败，已结束重试", ERROR)
             return False
 
         self.manager.delete(self.temp.joinpath(f"{name}.{format_}"))
@@ -278,7 +317,7 @@ class Download:
             f"{name} 的 PNG 转换地址下载失败，仅该文件改用 AUTO 重试",
             WARNING,
         )
-        return bool(
+        success = bool(
             await self.__download_with_retry(
                 auto_url,
                 path,
@@ -288,6 +327,9 @@ class Download:
                 **retry_options,
             )
         )
+        if not success:
+            logging(self.print, f"{name}：下载失败，已结束重试", ERROR)
+        return success
 
     async def __download_with_retry(
         self,
@@ -299,8 +341,26 @@ class Download:
         progress: Callable[[dict], None] | None = None,
         task_id: str | None = None,
     ) -> _DownloadOutcome:
-        png_conversion_failed = False
-        for _ in range(self.retry + 1):
+        deferred = DEFERRED_RETRY.get()
+        png_conversion_failed = bool(deferred and url in deferred.png_failures)
+        http1 = bool(deferred and url in deferred.http1_urls)
+        retry_limit = 0 if deferred is not None else self.retry
+        for attempt in range(retry_limit + 1):
+            if attempt:
+                delay = min(2 ** attempt, 20) + uniform(0, 1)
+                logging(
+                    self.print,
+                    f"{name}：等待 {delay:.1f} 秒后重试（{attempt}/{self.retry}）",
+                    WARNING,
+                )
+                if progress:
+                    progress({
+                        "task_id": task_id,
+                        "filename": f"{name}.{format_}",
+                        "state": "retrying",
+                    })
+                await sleep(delay)
+            request_options = {"http_version": CurlHttpVersion.V1_1} if http1 else {}
             result = await self.__download_once(
                 url,
                 path,
@@ -309,10 +369,28 @@ class Download:
                 mtime,
                 progress,
                 task_id,
+                **request_options,
             )
+            http1 |= result.http2_failed
             png_conversion_failed |= result.png_conversion_failed
             if result:
                 return _DownloadOutcome(True, png_conversion_failed)
+            if deferred is not None:
+                deferred.download_failed = True
+                deferred.retryable |= result.retryable
+                if http1:
+                    deferred.http1_urls.add(url)
+                if png_conversion_failed:
+                    deferred.png_failures.add(url)
+            if not result.retryable:
+                break
+        if progress:
+            progress({
+                "task_id": task_id,
+                "filename": f"{name}.{format_}",
+                "state": "failed",
+            })
+        logging(self.print, f"{name}：当前地址尝试已结束", WARNING)
         return _DownloadOutcome(False, png_conversion_failed)
 
     async def __download_once(
@@ -324,6 +402,7 @@ class Download:
         mtime: int,
         progress: Callable[[dict], None] | None,
         task_id: str | None,
+        http_version: CurlHttpVersion | None = None,
     ):
         async with self.SEMAPHORE:
             headers = self.headers.copy()
@@ -350,6 +429,8 @@ class Download:
                     "GET",
                     url,
                     headers=headers,
+                    timeout=(min(self.timeout, 15), self.timeout),
+                    **({"http_version": http_version} if http_version is not None else {}),
                 ) as response:
                     # await sleep_time()
                     if response.status_code == 416:
@@ -357,6 +438,9 @@ class Download:
                             _("文件 {0} 缓存异常，重新下载").format(temp.name),
                         )
                     response.raise_for_status()
+                    # 服务器忽略 Range 时从头写入，避免完整文件追加到旧缓存。
+                    if completed and response.status_code == 200:
+                        completed = 0
                     # self.__create_progress(
                     #     bar,
                     #     int(
@@ -367,24 +451,28 @@ class Download:
                     total = completed + content_length if content_length else None
                     report("downloading", total)
                     buffer = bytearray()
-                    async with open(temp, "ab") as f:
+                    async with open(temp, "ab" if completed else "wb") as f:
                         content = response.aiter_content(self.chunk)
-                        while True:
-                            try:
-                                chunk = await wait_for(
-                                    anext(content),
-                                    timeout=self.timeout,
-                                )
-                            except StopAsyncIteration:
-                                break
-                            buffer.extend(chunk)
-                            if len(buffer) >= self.WRITE_BUFFER_SIZE:
+                        try:
+                            while True:
+                                try:
+                                    chunk = await wait_for(
+                                        anext(content), timeout=self.timeout,
+                                    )
+                                except StopAsyncIteration:
+                                    break
+                                buffer.extend(chunk)
+                                if len(buffer) >= self.WRITE_BUFFER_SIZE:
+                                    await f.write(bytes(buffer))
+                                    buffer.clear()
+                                completed += len(chunk)
+                                report("downloading", total)
+                        finally:
+                            # 超时或断开时也保存已收到的数据，供下次 Range 续传。
+                            if buffer:
                                 await f.write(bytes(buffer))
-                                buffer.clear()
-                            completed += len(chunk)
-                            report("downloading", total)
-                        if buffer:
-                            await f.write(bytes(buffer))
+                    if total is not None and completed != total:
+                        raise CacheError(f"文件 {name} 长度不完整，重新下载")
                 real = await self.__suffix_with_file(
                     temp,
                     path,
@@ -409,7 +497,7 @@ class Download:
                         name,
                         self.timeout,
                     ),
-                    ERROR,
+                    WARNING,
                 )
                 return _DownloadOutcome(
                     False,
@@ -420,13 +508,15 @@ class Download:
                 logging(
                     self.print,
                     _("网络异常，{0} 下载失败，错误信息: {1}").format(
-                        name, repr(error)
+                        name, self.__error_summary(error)
                     ),
-                    ERROR,
+                    WARNING,
                 )
                 return _DownloadOutcome(
                     False,
                     self.__is_png_conversion_failure(url, format_, error),
+                    retryable=self.__can_retry(url, format_, error),
+                    http2_failed=getattr(error, "code", None) in {16, 92},
                 )
             except CacheError as error:
                 report("failed")
@@ -437,6 +527,22 @@ class Download:
                     ERROR,
                 )
                 return _DownloadOutcome(False)
+
+    @staticmethod
+    def __error_summary(error: Exception) -> str:
+        status = getattr(getattr(error, "response", None), "status_code", None)
+        return (
+            f"{type(error).__name__}，curl {getattr(error, 'code', None)}，"
+            f"HTTP {status}"
+        )
+
+    @classmethod
+    def __can_retry(cls, url: str, format_: str, error: Exception) -> bool:
+        status = getattr(getattr(error, "response", None), "status_code", None)
+        return (
+            status is None or status in {408, 429} or status >= 500
+            or cls.__is_png_conversion_failure(url, format_, error)
+        )
 
     @classmethod
     def __is_png_conversion_failure(

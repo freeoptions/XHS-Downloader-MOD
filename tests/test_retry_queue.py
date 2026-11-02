@@ -43,7 +43,7 @@ class RetryQueueTest(IsolatedAsyncioTestCase):
         statistics = SimpleNamespace(all=3, success=0, fail=0, skip=0)
 
         with (
-            patch("source.application.app.uniform", side_effect=[55.0, 12.0]),
+            patch("source.application.app.uniform", side_effect=[30.0, 25.0]),
             patch("source.application.app.sleep", new=AsyncMock()) as sleep_mock,
         ):
             result = await xhs._process_batch(
@@ -64,13 +64,13 @@ class RetryQueueTest(IsolatedAsyncioTestCase):
                 ("always-fail", 20),
             ],
         )
-        self.assertEqual(sleep_mock.await_args_list, [call(55.0), call(12.0)])
+        self.assertEqual(sleep_mock.await_args_list, [call(30.0), call(25.0)])
         self.assertEqual(statistics.success, 2)
         self.assertEqual(statistics.fail, 1)
         self.assertEqual(statistics.skip, 0)
         self.assertEqual(result[1], {"url": "recover"})
         self.assertEqual(xhs.last_failed_urls, ["always-fail"])
-        self.assertTrue(any("55.0 秒" in message for message, _ in logs))
+        self.assertTrue(any("30.0 秒" in message for message, _ in logs))
         self.assertTrue(any("恢复 1 个，仍失败 1 个" in message for message, _ in logs))
 
     async def test_download_failure_is_not_added_to_read_retry_queue(self):

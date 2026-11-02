@@ -2,6 +2,7 @@
 <img src="static/XHS-Downloader.png" alt="XHS-Downloader" height="256" width="256"><br>
 <h1>XHS-Downloader</h1>
 <p>简体中文 | <a href="README_EN.md">English</a></p>
+
 <p>🔥 <b>小红书（XiaoHongShu、RedNote）链接提取/作品采集工具！</b></p>
 </div>
 <hr>
@@ -26,6 +27,7 @@
 <li>✅ 自定义文件名称格式</li> 
 <li>✅ 支持 API 调用功能</li>
 <li>✅ 支持 MCP 调用功能</li>
+<li>✅ 支持 API、MCP 和用户脚本鉴权</li>
 <li>✅ 支持文件断点续传下载</li>
 <li>✅ 智能识别作品文件类型</li>
 <li>✅ 支持设置作者备注</li>
@@ -115,6 +117,9 @@
 <p>项目支持命令行运行模式，可通过命令行参数直接下载作品文件，也可以设置需要下载的图片序号！</p>
 <p><strong>注意：</strong>未设置 <code>--index</code> 参数时，支持传入多个作品链接，全部链接需要使用引号包围，链接之间使用空格分隔；已设置 <code>--index</code> 参数时，不支持传入多个作品链接，即使传入多个作品链接，程序仅处理首个作品链接！</p>
 <p><code>bool</code> 类型参数支持使用 <code>true</code>、<code>false</code>、<code>1</code>、<code>0</code>、<code>yes</code>、<code>no</code>、<code>on</code> 或 <code>off</code>（不区分大小写）来设置。</p>
+<h2 id="auth-token">生成鉴权令牌</h2>
+<pre>python .\main.py token</pre>
+<p>使用 <code>uv</code> 时可以运行 <code>uv run main.py token</code> 获取鉴权令牌。</p>
 <h2>从浏览器读取 Cookie</h2>
 <p>该功能已失效，请参考 <a href="#cookie">获取 Cookie</a> 教程！</p>
 <p><del>可以使用命令行实现 <b>从浏览器读取 Cookie 并写入配置文件！</b></del></p>
@@ -127,11 +132,15 @@
 </details>
 <h1>🖥 服务器模式</h1>
 <p>服务器模式包含 API 模式和 MCP 模式！</p>
+<h2>鉴权令牌</h2>
+<p>API 和 MCP 模式启动时会在终端输出鉴权令牌。</p>
+<p>令牌默认永久有效，请勿公开。令牌与当前项目的 <code>Volume/auth_secret.key</code> 文件绑定；如需更换令牌，可以删除该文件，程序下次启动或生成令牌时会自动创建新的密钥，旧令牌随即失效。</p>
 <h2>API 模式</h2>
 <details>
 <summary>API 模式说明，适合需要调用接口获取作品数据或下载文件的开发者（点击展开）</summary>
 <p><b>启动：</b>运行命令：<code>python .\main.py api</code></p>
 <p><b>关闭：</b>按下 <code>Ctrl</code> + <code>C</code> 关闭服务器</p>
+<p>调用业务接口时必须在请求头中携带 <code>Authorization: Bearer &lt;令牌&gt;</code>，未携带或令牌无效时返回 <code>403</code>。在 <code>/docs</code> 页面中点击右上角 <code>Authorize</code>，输入令牌即可调试接口。</p>
 <p>访问 <code>http://127.0.0.1:5556/docs</code> 或者 <code>http://127.0.0.1:5556/redoc</code>；你会看到自动生成的交互式 API 文档！</p>
 <p><b>请求接口：</b><code>/xhs/detail</code></p>
 <p><b>请求方法：</b><code>POST</code></p>
@@ -200,20 +209,34 @@ async def example_api():
         ],
         "proxy": "http://127.0.0.1:10808",
     }
-    response = post(server, json=data, timeout=10)
+    token = "API 模式启动时输出的鉴权令牌"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = post(server, json=data, headers=headers, timeout=10)
     print(response.json())
 </pre>
 </details>
 <h2>MCP 模式</h2>
 <details>
 <summary>MCP 模式说明，适合需要启动 MCP 服务接入 AI 助手等工具的开发者（点击展开）</summary>
+<p>MCP 模式为可选功能，源码运行时需额外安装 <code>fastmcp</code> 库，参考命令：<code>pip install "fastmcp&gt;=4.1.0"</code> 或 <code>uv sync --no-dev --extra mcp</code></p>
 <p><b>启动：</b>运行命令：<code>python .\main.py mcp</code></p>
 <p><b>关闭：</b>按下 <code>Ctrl</code> + <code>C</code> 关闭服务器</p>
+<p>调用 MCP 的 HTTP 接口时，客户端必须在请求头中携带 <code>Authorization: Bearer &lt;令牌&gt;</code>；未携带或令牌无效时请求会被拒绝。</p>
 <h3>MCP 配置示例</h3>
 
 [//]: # (<h4>STDIO</h4>)
 <h4>Streamable HTTP</h4>
-<p><b>MCP URL：</b><code>http://127.0.0.1:5556/mcp/</code></p>
+<p><b>MCP URL：</b><code>http://127.0.0.1:5556/mcp</code></p>
+<pre>{
+  "mcpServers": {
+    "XHS-Downloader": {
+      "url": "http://127.0.0.1:5556/mcp",
+      "headers": {
+        "Authorization": "Bearer &lt;鉴权令牌&gt;"
+      }
+    }
+  }
+}</pre>
 <img src="static/screenshot/MCP配置示例.png" alt="MCP配置示例">
 <h3>MCP 调用示例</h3>
 <h4><strong>获取小红书作品信息</strong></h4>
@@ -257,6 +280,7 @@ async def example_api():
 <ul><b>功能说明：</b>
 <li>在项目程序的配置文件中，需要将 <code>script_server</code> 参数设置为 <code>true</code></li>
 <li>保持项目程序在后台运行，它将作为服务器，接收用户脚本的指令（TUI、MCP 和 API 模式均支持）</li>
+<li>首次配置或令牌更换时，在用户脚本设置中填写鉴权令牌；参考 <a href="#auth-token">CLI 章节的生成鉴权令牌说明</a></li>
 <li>当您在浏览器中访问作品页面时，点击用户脚本菜单中的 <code>推送下载任务</code> 选项</li>
 <li>用户脚本会将下载任务发送给项目程序，由项目程序负责处理和下载文件</li>
 </ul>
@@ -292,6 +316,7 @@ async def example():
     timeout = 5  # 请求数据超时限制，单位：秒
     chunk = 1024 * 1024 * 10  # 下载文件时，每次从服务器获取的数据块大小，单位：字节
     max_retry = 2  # 请求数据失败时，重试的最大次数，单位：次
+    avg_delay = 6.0  # 请求数据的间隔时间均值，单位：秒
     record_data = False  # 是否保存作品数据至文件
     image_format = "WEBP"  # 图文作品文件下载格式，支持：AUTO、PNG、WEBP、JPEG、HEIC
     folder_mode = False  # 是否将每个作品的文件储存至单独的文件夹
@@ -318,6 +343,7 @@ async def example():
         timeout=timeout,
         chunk=chunk,
         max_retry=max_retry,
+        avg_delay=avg_delay,
         record_data=record_data,
         image_format=image_format,
         folder_mode=folder_mode,
@@ -425,6 +451,12 @@ async def example():
 <td align="center">int</td>
 <td align="center">请求数据超时限制，单位：秒</td>
 <td align="center">10</td>
+</tr>
+<tr>
+<td align="center">avg_delay</td>
+<td align="center">float</td>
+<td align="center">请求数据的间隔时间均值，单位：秒；最小值 0.1</td>
+<td align="center">6.0</td>
 </tr>
 <tr>
 <td align="center">chunk</td>
@@ -654,6 +686,7 @@ A: 由于权限限制，您无法直接触发主仓库的 Actions。请通过 Fo
 <li><a href="https://opensource.guide/zh-hans/how-to-contribute/">如何为开源做贡献</a></li>
 </ul>
 </details>
+
 # 💡 项目参考
 
 * https://github.com/lexiforest/curl_cffi
@@ -665,7 +698,6 @@ A: 由于权限限制，您无法直接触发主仓库的 Actions。请通过 Fo
 * https://github.com/carpedm20/emoji/
 * https://github.com/asweigart/pyperclip
 * https://github.com/lxml/lxml
-* https://github.com/yaml/pyyaml
 * https://github.com/pallets/click/
 * https://github.com/encode/uvicorn
 * https://github.com/Tinche/aiofiles

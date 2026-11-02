@@ -347,6 +347,24 @@
         refreshQueue();
     });
 
+    document.getElementById("copyFailedIds").addEventListener("click", () => {
+        void runNativeAction(async () => {
+            const copied = await nativeApi.copy_failed_ids();
+            showToast(copied ? `已复制 ${copied} 个失败帖子 ID` : "暂无失败帖子 ID", copied ? "success" : "warning");
+        });
+    });
+
+    document.getElementById("copyTaskLinks").addEventListener("click", () => {
+        void runNativeAction(async () => {
+            const copied = await nativeApi.copy_task_links(currentQueueFilter);
+            if (copied === 0) {
+                showToast(translateText("toast.no_links_to_copy"), "warning");
+                return;
+            }
+            showToast(formatTranslated("toast.links_copied", [copied]));
+        });
+    });
+
     let currentMonitorFilter = "all";
 
     function refreshMonitorQueue() {
@@ -841,7 +859,7 @@
         stateLine.className = "queue-state-line";
         const state = document.createElement("span");
         state.className = `status-text ${statusClass(task.state)}`;
-        state.textContent = translateText(statusLabels[task.state]);
+        state.textContent = task.waiting_retry ? "等待队尾重试" : translateText(statusLabels[task.state]);
         stateLine.append(state);
         detail.append(link, stateLine);
         item.append(symbol, detail);
@@ -864,6 +882,7 @@
                                              task.display_text,
                                              task.url,
                                              task.state,
+                                             task.waiting_retry,
                                          ]);
         if (item.dataset.renderKey === renderKey) return;
         item.dataset.renderKey = renderKey;
@@ -883,6 +902,7 @@
                                              task.display_text,
                                              task.url,
                                              task.state,
+                                             task.waiting_retry,
                                          ]);
         if (item.dataset.renderKey === renderKey) return;
         item.dataset.renderKey = renderKey;
@@ -901,7 +921,7 @@
         state.className = `status-text ${statusClass(task.state)}`;
         if (task.state === "success") state.innerHTML = icon("check");
         else state.append(document.createElement("i"));
-        state.append(document.createTextNode(translateText(statusLabels[task.state])));
+        state.append(document.createTextNode(task.waiting_retry ? "等待队尾重试" : translateText(statusLabels[task.state])));
         item.append(symbol, primary, state);
     }
 
@@ -1074,6 +1094,7 @@
         document.getElementById("settingsProxy").value = settings.proxy || "";
         document.getElementById("settingsTimeout").value = String(settings.timeout);
         document.getElementById("settingsMaxRetry").value = String(settings.max_retry);
+        document.getElementById("settingsAvgDelay").value = String(settings.avg_delay);
         document.getElementById("settingsChunkSize").value = String(settings.chunk);
         document.getElementById("settingsLanguage").value = settings.language;
         document.getElementById("settingsScriptServer").checked = Boolean(settings.script_server);
@@ -1126,6 +1147,7 @@
             proxy: document.getElementById("settingsProxy").value.trim() || null,
             timeout: Number(document.getElementById("settingsTimeout").value || 10),
             max_retry: Number(document.getElementById("settingsMaxRetry").value || 5),
+            avg_delay: Number(document.getElementById("settingsAvgDelay").value) || 6,
             chunk: chunkSize,
             language: document.getElementById("settingsLanguage").value,
             script_server: document.getElementById("settingsScriptServer").checked,

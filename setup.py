@@ -1,4 +1,4 @@
-from importlib.metadata import distribution
+from importlib.metadata import PackageNotFoundError, distribution
 from sys import platform
 
 from cx_Freeze import Executable, setup
@@ -17,16 +17,23 @@ def include_distribution_metadata(distribution_name):
 build_exe_options = {
     "packages": [
         "rich",
-        "opentelemetry",
         "uvicorn",
     ],
     "include_files": [
         ("static", "static"),
         ("locale", "locale"),
-        include_distribution_metadata("opentelemetry-api"),
     ],
     "include_msvcr": True,
 }
+
+# 上游已将 MCP 改为可选依赖；未安装时不强制收集其间接依赖。
+try:
+    telemetry_metadata = include_distribution_metadata("opentelemetry-api")
+except PackageNotFoundError:
+    pass
+else:
+    build_exe_options["packages"].append("opentelemetry")
+    build_exe_options["include_files"].append(telemetry_metadata)
 
 executables = [
     Executable(

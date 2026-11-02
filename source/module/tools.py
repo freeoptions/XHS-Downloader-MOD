@@ -1,6 +1,7 @@
 from asyncio import sleep
+from functools import wraps
 from math import log
-from random import lognormvariate
+from random import lognormvariate, uniform
 from typing import Callable
 
 from rich import print
@@ -8,13 +9,18 @@ from rich.text import Text
 
 from ..translation import _
 from .static import INFO
+from .deferred_retry import DEFERRED_RETRY
 
 
 def retry(function):
+    @wraps(function)
     async def inner(self, *args, **kwargs):
         if result := await function(self, *args, **kwargs):
             return result
-        for __ in range(self.retry):
+        for attempt in range(0 if DEFERRED_RETRY.get() else self.retry):
+            if not getattr(self, "request_retryable", True):
+                break
+            await sleep(min(2 ** (attempt + 1), 20) + uniform(0, 1))
             if result := await function(self, *args, **kwargs):
                 return result
         return result
@@ -78,8 +84,11 @@ def get_wait_time(
     sigma: float = 0.6,
 ) -> float:
     mu = log(avg_delay) - (sigma**2 / 2)
-    return max(0.5, lognormvariate(mu, sigma))
+    delay = lognormvariate(mu, sigma)
+    min_delay = avg_delay * 0.2
+    max_delay = avg_delay * 5
+    return max(min_delay, min(max_delay, delay))
 
 
-async def sleep_time():
-    await sleep(get_wait_time())
+async def sleep_time(avg_delay: float | int = 6.0):
+    await sleep(get_wait_time(avg_delay))

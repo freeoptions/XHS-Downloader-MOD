@@ -5,6 +5,8 @@ from sys import argv
 
 from source import XHS, Settings, XHSDownloader, cli
 from source.GUI import launch
+from source.module import generate_auth_token
+from source.translation import _
 
 async def tui():
     async with XHSDownloader() as xhs:
@@ -53,5 +55,7 @@ if __name__ == "__main__":
         elif argv[1].upper() == "MCP":
             run(mcp_server())
             # run(mcp_server("stdio"))
+        elif argv[1].upper() == "TOKEN":
+            print(_("鉴权令牌: {}").format(generate_auth_token()))
         else:
             cli()
